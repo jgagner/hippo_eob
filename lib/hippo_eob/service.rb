@@ -1,7 +1,7 @@
 module HippoEob
   class Service
     attr_accessor  :service_number, :procedure_code, :date_of_service, :place_of_service, :modifier_1, :modifier_2, :modifier_3, :modifier_4,
-                   :charge_amount, :payment_amount, :allowed_amount,  :deductible_amount,  :co_insurance_amount, :adjustments
+                   :charge_amount, :payment_amount, :allowed_amount, :adjustments
 
     def initialize
       @adjustments  = []
@@ -24,7 +24,7 @@ module HippoEob
           adjustment = Adjustment.new
           adjustment.type   = cas.CAS01
           adjustment.code   = cas.send(:"CAS#{index.to_s.rjust(2,'0')}")
-          adjustment.amount = cas.send(:"CAS#{index.to_s.rjust(2,'0')+1}")
+          adjustment.amount = cas.send(:"CAS#{(index+1).to_s.rjust(2,'0')}")
 
           @adjustments << adjustment
         end
@@ -36,11 +36,13 @@ module HippoEob
     end
 
     def deductible_amount
-      return @deductible_amount
+      adj = adjustments.detect{|a| a.type == 'PR' && a.code == '2'}
+      adj.amount if adj
     end
 
     def coinsurance_amount
-      return @coinsurance_amount
+      adj = adjustments.detect{|a| a.type == 'PR' && a.code == '1'}
+      adj.amount if adj
     end
   end
 end

@@ -29,6 +29,7 @@ module HippoEob
         adjustment = Adjustment.new
         adjustment.type   = "MOA"
         adjustment.code   = l2100.MOA.send(:"MOA#{index.to_s.ljust(2,'0')}")
+        adjustment.amount = l2100.MOA.send(:"MOA#{(index+1).to_s.ljust(2,'0')}")
         @adjustments << adjustment if adjustment.code
       end
 
@@ -39,7 +40,7 @@ module HippoEob
           adjustment = Adjustment.new
           adjustment.type   = cas.CAS01
           adjustment.code   = cas.send(:"CAS#{index.to_s.rjust(2,'0')}")
-          adjustment.amount = cas.send(:"CAS#{index.to_s.rjust(2,'0')+1}")
+          adjustment.amount = cas.send(:"CAS#{(index+1).to_s.rjust(2,'0')}")
 
           @adjustments << adjustment
         end
