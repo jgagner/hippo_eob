@@ -13,25 +13,24 @@ module HippoEob
 
 			def generate
 				print_header
-				print_detail_eob			
+				print_detail_eob
 				print_footer
 				print_page_count
 				return @pdf
 			end
 
 			def print_page_count
-				#Add the page count
-			string = "Page <page> of <total>"
-			top_options = { :at => [30, 635],
-			:width => 35,
-			:align => :left,
-			:page_filter => (1..7),
-			:start_count_at => 1
+		  	#Add the page count
+			     string = "Page <page> of <total>"
+			     top_options = { :at => [30, 635],
+			   :width => 35,
+			   :align => :left,
+			   :page_filter => (1..7),
+			   :start_count_at => 1
 				}
-			@pdf.number_pages string, top_options
-       
+			 @pdf.number_pages string, top_options
 			end
-     
+
 			def print_header
 				initial_y = @pdf.cursor
 				initialmove_y = 5
@@ -43,11 +42,11 @@ module HippoEob
 			  last_measured_y = @pdf.cursor
 			  @pdf.move_down @line_height + 4
 
-			  @pdf.font_size 8		
+			  @pdf.font_size 8
 			end
 
 			def print_footer
-            	
+
 			end
 
 
@@ -58,15 +57,16 @@ module HippoEob
 
 				print_header
 				print_addresses
-				
+
 				@pdf.move_cursor_to ???
 			end
 
 
-			def print_details
+			def print_detail_eob
 				detail_items = 18
-				@pdf.move_cursor_to 508.0        
+				@pdf.move_cursor_to 508.0
 			end
-   		end
+
+   	end
 	end
 end

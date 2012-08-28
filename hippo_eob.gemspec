@@ -8,8 +8,8 @@ Gem::Specification.new do |s|
   s.authors     = ["Alopiano"]
   s.email       = ["alopiano@promedicalinc.com"]
   s.homepage    = ""
-  s.summary     = %q{TODO: Write a gem summary}
-  s.description = %q{TODO: Write a gem description}
+  s.summary     = %q{Generate a PDF EOB from a Hippo 835 Object (or by populating the objects themselves).}
+  s.description = %q{Generate a PDF EOB from a Hippo 835 Object (or by populating the objects themselves).}
 
   s.rubyforge_project = "hippo_eob"
 
@@ -18,7 +18,5 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  # specify any dependencies here; for example:
-  # s.add_development_dependency "rspec"
-  # s.add_runtime_dependency "rest-client"
+  s.add_runtime_dependency "hippo"
 end
