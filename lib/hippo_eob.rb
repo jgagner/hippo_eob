@@ -19,16 +19,16 @@ require_relative "hippo_eob/payee"
 require_relative "hippo_eob/claim_payment"
 require_relative "hippo_eob/service"
 require_relative "hippo_eob/payment"
-require_relative "hippo_eob/adjustments"
+require_relative "hippo_eob/adjustment"
 
-require_relative "hippo_eob/outputters/general_eob_pdf"
+require_relative "hippo_eob/outputters/easy_print_pdf"
 
 module HippoEob; end
 
 if __FILE__ == $0
-  eob = Eob::Eob.new
-
-  
-  stat.to_pdf.render_file('output.pdf')
-  #`evince output.pdf &`
+  payments = HippoEob::Payment.process_hipaa_file('some/path/here.era')
+  payments.each_with_index do |payment|
+    payment.to_pdf.render_file("output_#{i}.pdf")
+    #`open output.pdf`
+  end
 end

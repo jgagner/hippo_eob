@@ -1,5 +1,5 @@
 module HippoEob
-  class Adjustments
+  class Adjustment
     attr_accessor :type,  :code,  :amount
 
   end
