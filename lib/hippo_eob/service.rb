@@ -14,19 +14,20 @@ module HippoEob
       @modifier_1        = l2110.SVC.SVC01_03
       @modifier_2        = l2110.SVC.SVC01_04
       @charge_amount     = 0
-      @payment_amount    = l2110.svc.SVC01_03
+      @payment_amount    = l2110.SVC.SVC01_03
       @allowed_amount    = 0
       @deductible_amount = 0
       @co_insurance      = 0
 
       l2110.CAS.each do |cas|
         [2,5,8,11,14,17].each do |index|
+
           adjustment = Adjustment.new
           adjustment.type   = cas.CAS01
           adjustment.code   = cas.send(:"CAS#{index.to_s.rjust(2,'0')}")
           adjustment.amount = cas.send(:"CAS#{(index+1).to_s.rjust(2,'0')}")
 
-          @adjustments << adjustment
+          @adjustments << adjustment if adjustment.code
         end
       end
     end

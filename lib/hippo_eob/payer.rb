@@ -1,5 +1,5 @@
 module HippoEob
-  class Payer < ContactBase
-	           
-  end 
+  class Payer < HippoEob::ContactBase
+
+  end
 end
