@@ -1,7 +1,9 @@
 module HippoEob
   class Service
-    attr_accessor  :service_number, :procedure_code, :date_of_service, :place_of_service, :modifier_1, :modifier_2, :modifier_3, :modifier_4,
-                   :charge_amount, :payment_amount, :allowed_amount, :adjustments
+    attr_accessor  :service_number, :procedure_code, :date_of_service, :place_of_service,
+                   :modifier_1, :modifier_2, :modifier_3, :modifier_4,
+                   :charge_amount, :payment_amount, :allowed_amount, :deductible_amount, :co_insurance,
+                   :adjustments, :original_units_svc_count, :units_svc_paid_count
 
     def initialize
       @adjustments  = []
@@ -13,8 +15,12 @@ module HippoEob
       @procedure_code    = l2110.SVC.ProductServiceId
       @modifier_1        = l2110.SVC.SVC01_03
       @modifier_2        = l2110.SVC.SVC01_04
-      @charge_amount     = 0
-      @payment_amount    = l2110.SVC.SVC01_03
+      @charge_amount     = l2110.SVC.SVC02
+      @payment_amount    = l2110.SVC.SVC03
+      @units_svc_paid_count = l2110.SVC.SVC05
+      @original_units_svc_count = l2110.SVC.SVC07
+      location_number    = l2110.find_by_name('Service Identification').detect{|ref| ref.REF01 == 'LU'}
+      @place_of_service  = location_number.REF02 if location_number
 
 
       l2110.CAS.each do |cas|
@@ -29,7 +35,7 @@ module HippoEob
         end
       end
 
-      @allowed_amount    = allowed_amount
+      @allowed_amount    = l2110.AMT.AMT02
       @deductible_amount = deductible_amount
       @co_insurance      = coinsurance_amount
     end
@@ -39,12 +45,12 @@ module HippoEob
     end
 
     def deductible_amount
-      adj = adjustments.detect{|a| a.type == 'PR' && a.code == '2'}
+      adj = adjustments.detect{|a| a.type == 'PR' && a.code == '1'}
       adj.amount if adj
     end
 
     def coinsurance_amount
-      adj = adjustments.detect{|a| a.type == 'PR' && a.code == '1'}
+      adj = adjustments.detect{|a| a.type == 'PR' && a.code == '2'}
       adj.amount if adj
     end
   end

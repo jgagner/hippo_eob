@@ -2,7 +2,8 @@ module HippoEob
   class ClaimPayment
     attr_accessor :patient_number, :insurance_number, :policy_number, :claim_number, :claim_status_code,  :charge_amount,
 	                :payment_amount, :patient_reponsibility_amount,  :tracking_number, :cross_over_carrier_name,
-				          :services,  :adjustments, :patient_name
+                  :cross_over_carrier_code,
+				          :services,  :adjustments, :patient_name, :provider_npi, :rendering_provider_information, :total_submitted
 
     def initialize
 		  @services    = []
@@ -10,6 +11,7 @@ module HippoEob
     end
 
     def process_hippo_object(l2100)
+#      binding.pry
       self.payment_amount               = l2100.CLP.CLP04
       self.claim_status_code            = l2100.CLP.CLP02
       self.tracking_number              = l2100.CLP.CLP07
@@ -17,7 +19,11 @@ module HippoEob
       self.patient_number               = l2100.CLP.CLP01
       self.patient_name                 = l2100.NM1.NM103 + ', ' + l2100.NM1.NM104
       self.patient_reponsibility_amount = l2100.CLP.CLP05
-
+      self.provider_npi                 = l2100.find_by_name('Service Provider Name').NM109
+      self.rendering_provider_information = l2100.find_by_name('Rendering Provider Identification').REF02
+      self.cross_over_carrier_name        = l2100.find_by_name('Crossover Carrier Name').NM103
+      self.cross_over_carrier_code        = l2100.find_by_name('Crossover Carrier Name').NM109
+      self.total_submitted                  = l2100.CLP.CLP03
 
       #Claim CAS - MIA - MOA
       [5,20,21].each do |index|

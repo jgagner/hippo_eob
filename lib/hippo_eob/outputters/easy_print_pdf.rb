@@ -6,7 +6,7 @@ module HippoEob
       def initialize(eob)
         @eob = eob
         @pdf = Prawn::Document.new
-        @left_boundary    = 30
+        @left_boundary    = 10
         @line_height      = 12
         @right_boundary   = 400
 
@@ -89,7 +89,13 @@ module HippoEob
           style(row(0..-1), :borders => [], :padding => [1, 5])
         end
         @pdf.move_down @line_height
-        #todo:put line in here
+
+
+        #Line
+        @pdf.stroke do
+          @pdf.horizontal_rule
+        end
+
 
         @pdf.font_size 8
       end
@@ -111,29 +117,57 @@ module HippoEob
         @pdf.move_cursor_to 67
       end
 
-      def get_adjustments(cas)
+      def get_adjustments(cas, cas_type)
 
         return '' unless cas.length > 0
         cas_string = ''
+        schar = '-'
         cas.each do |c|
+          if cas_type == 'CLAIM'
+            schar = ':'
+          end
+          cas_string += c.type + schar  unless c.type.nil?
+          cas_string += c.code + ' '    unless c.code.nil?
 
-          cas_string += c.type + ' '  unless c.type.nil?
-          cas_string += c.code + ' '  unless c.code.nil?
-
-          cas_string += c.amount.to_f.to_s + ' ' unless c.amount.nil?
+          if cas_type == 'SERVICE'
+            cas_string += c.amount.to_f.to_s + ' ' unless c.amount.nil?
+          end
 
         end
         return cas_string
       end
 
-      def get_services(svc)
-        svc_info = ''
+      def get_services(svc, provider_npi)
+        svc_info = []
+
         svc.each do |s|
-          svc_info += s.service_number + ' '
-          svc_info += s.date_of_service.strftime("%m%d") + ' ' + s.date_of_service.strftime("%m%d%Y")
-          svc_info += s.modifier_1.to_s + ' ' + s.modifier_2.to_s
-          svc_info += s.procedure_code + ' '
-          svc_info += get_adjustments(s.adjustments)
+
+          # svc_info += s.date_of_service.strftime("%m%d") + ' ' + s.date_of_service.strftime("%m%d%Y") + '   '
+          # svc_info += s.place_of_service + ' '
+          # svc_info += s.procedure_code + ' ' + s.modifier_1.to_s + ' ' + s.modifier_2.to_s + '  '
+          # svc_info += s.units_svc_paid_count.to_s + '  '
+          # svc_info += s.charge_amount.to_s + '    ' + s.allowed_amount.to_s + '  ' + s.deductible_amount.to_s  + '  '
+          # svc_info += s.co_insurance.to_s + '   ' + s.payment_amount.to_s
+          # svc_info += s.original_units_svc_count.to_s + ' ' +
+
+          # svc_info += get_adjustments(s.adjustments, 'SERVICE')
+
+          # svc_info += 'CNTL #:' + s.service_number + ' '
+
+          svc_info << [ provider_npi + '  ' + s.date_of_service.strftime("%m%d") + ' ' + s.date_of_service.strftime("%m%d%Y") + ' ' + s.place_of_service,
+                       s.procedure_code + ' ' + s.modifier_1.to_s + ' ' + s.modifier_2.to_s + '  ',
+                       s.units_svc_paid_count.to_s ,
+                       s.charge_amount.to_s,
+                       s.allowed_amount.to_s,
+                       s.deductible_amount.to_s,
+                       s.co_insurance.to_s,
+                       s.payment_amount.to_s]
+
+          svc_info << [ '','',s.original_units_svc_count.to_s,'',
+                      get_adjustments(s.adjustments, 'SERVICE'),'','','']
+
+          svc_info << ['CNTL #:' + s.service_number, '','','','','','','']
+
         end
 
         return svc_info
@@ -142,26 +176,50 @@ module HippoEob
       def print_detail_eob
         #detail_items = 18
         table_data = []
-        @eob.claim_payments.each do |c|
+        @eob.claim_payments.sort_by{|cp| cp.patient_name}.each do |c|
           table_data << [
                             'NAME:' + c.patient_name ,
                             'HIC: ' + c.policy_number.to_s,
                             'ACNT:'   + c.patient_number.to_s,
                             'ICN:'   + c.tracking_number.to_s, 'ASG: ' ,
-                            get_adjustments(c.adjustments)
+                            get_adjustments(c.adjustments, 'CLAIM'),'',''
                         ]
 
-          table_data << [
-                            'Service Info: ' + get_services(c.services),
-                            'Payment Amt ' + c.payment_amount.to_s,
-                            'Claim Status Code: ' + c.claim_status_code.to_s,
-                            '',
-                            ''
+          #table_data << [   c.provider_npi, c.rendering_provider_information,
+          #                  '' + get_services(c.services),
+          #                  'Claim Status Code: ' + c.claim_status_code.to_s,
+          #                  'Payment Amt ' + c.payment_amount.to_s('F'), ' ','',''
+          #
+          #          ]
+
+          x = []
+          x = get_services(c.services, c.provider_npi)
+          x.each do |xx|
+            table_data << xx
+          end
+
+          table_data << ['PT RESP' + c.patient_reponsibility_amount.to_s, '',
+                         'CLAIM TOTALS' , c.total_submitted.to_s,
+                         '','',
+                         c.patient_reponsibility_amount.to_s,
+                         c.payment_amount.to_s('F')
                         ]
-         # [ '', '', '' ]
-        end
+          table_data << ['ADJ TO TOTALS:', 'PREV PD', '',
+                         'INTEREST', '',
+                         'LATE FILLING CHARGE',
+                         'NET', c.payment_amount.to_s('F')
+                        ]
+          table_data << [
+                          'CLAIM INFORMATON FORWARDED TO: ',
+                          c.cross_over_carrier_name, '','','','','',''
+                        ]
+          table_data << ['','', c.cross_over_carrier_code, '','','','','']
+
+
+         end
 
         @pdf.table(table_data) do
+          style(row(0..-1), :borders => [], :padding => [1, 5])
         end
       end
 
