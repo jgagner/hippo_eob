@@ -139,20 +139,7 @@ module HippoEob
 
       def get_services(svc, provider_npi)
         svc_info = []
-
         svc.each do |s|
-
-          # svc_info += s.date_of_service.strftime("%m%d") + ' ' + s.date_of_service.strftime("%m%d%Y") + '   '
-          # svc_info += s.place_of_service + ' '
-          # svc_info += s.procedure_code + ' ' + s.modifier_1.to_s + ' ' + s.modifier_2.to_s + '  '
-          # svc_info += s.units_svc_paid_count.to_s + '  '
-          # svc_info += s.charge_amount.to_s + '    ' + s.allowed_amount.to_s + '  ' + s.deductible_amount.to_s  + '  '
-          # svc_info += s.co_insurance.to_s + '   ' + s.payment_amount.to_s
-          # svc_info += s.original_units_svc_count.to_s + ' ' +
-
-          # svc_info += get_adjustments(s.adjustments, 'SERVICE')
-
-          # svc_info += 'CNTL #:' + s.service_number + ' '
 
           svc_info << [ provider_npi + '  ' + s.date_of_service.strftime("%m%d") + ' ' + s.date_of_service.strftime("%m%d%Y") + ' ' + s.place_of_service,
                        s.procedure_code + ' ' + s.modifier_1.to_s + ' ' + s.modifier_2.to_s + '  ',
@@ -185,17 +172,9 @@ module HippoEob
                             get_adjustments(c.adjustments, 'CLAIM'),'',''
                         ]
 
-          #table_data << [   c.provider_npi, c.rendering_provider_information,
-          #                  '' + get_services(c.services),
-          #                  'Claim Status Code: ' + c.claim_status_code.to_s,
-          #                  'Payment Amt ' + c.payment_amount.to_s('F'), ' ','',''
-          #
-          #          ]
 
-          x = []
-          x = get_services(c.services, c.provider_npi)
-          x.each do |xx|
-            table_data << xx
+          get_services(c.services, c.provider_npi).each do |service|
+            table_data << service
           end
 
           table_data << ['PT RESP' + c.patient_reponsibility_amount.to_s, '',
