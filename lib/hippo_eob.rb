@@ -27,7 +27,7 @@ module HippoEob; end
 
 if __FILE__ == $0
 
-  payments = HippoEob::Payment.process_hipaa_file('/Users/alopiano/src/hippo_eob/xdoc/FLTEST.EDI')
+  payments = HippoEob::Payment.process_hipaa_file('/Users/alopiano/src/hippo_eob/xdoc/FLTEST2.EDI')
 
   payments.each_with_index do |payment|
     #payment.to_pdf("output_#{i}.pdf")
