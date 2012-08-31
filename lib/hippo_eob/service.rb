@@ -15,9 +15,7 @@ module HippoEob
       @modifier_2        = l2110.SVC.SVC01_04
       @charge_amount     = 0
       @payment_amount    = l2110.SVC.SVC01_03
-      @allowed_amount    = 0
-      @deductible_amount = 0
-      @co_insurance      = 0
+
 
       l2110.CAS.each do |cas|
         [2,5,8,11,14,17].each do |index|
@@ -30,6 +28,10 @@ module HippoEob
           @adjustments << adjustment if adjustment.code
         end
       end
+
+      @allowed_amount    = allowed_amount
+      @deductible_amount = deductible_amount
+      @co_insurance      = coinsurance_amount
     end
 
     def allowed_amount

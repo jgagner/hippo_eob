@@ -2,7 +2,7 @@ module HippoEob
   class ClaimPayment
     attr_accessor :patient_number, :insurance_number, :policy_number, :claim_number, :claim_status_code,  :charge_amount,
 	                :payment_amount, :patient_reponsibility_amount,  :tracking_number, :cross_over_carrier_name,
-				          :services,  :adjustments
+				          :services,  :adjustments, :patient_name
 
     def initialize
 		  @services    = []
@@ -15,7 +15,9 @@ module HippoEob
       self.tracking_number              = l2100.CLP.CLP07
       self.policy_number                = l2100.NM1.NM109
       self.patient_number               = l2100.CLP.CLP01
+      self.patient_name                 = l2100.NM1.NM103 + ', ' + l2100.NM1.NM104
       self.patient_reponsibility_amount = l2100.CLP.CLP05
+
 
       #Claim CAS - MIA - MOA
       [5,20,21].each do |index|

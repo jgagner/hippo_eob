@@ -12,7 +12,7 @@ module HippoEob
       raise ArgumentError.new, 'Not a valid HIPAA 835 file.' unless contents =~ /005010X221A1/
 
       transaction_sets = Hippo::Parser.new.parse_string(contents)
-      binding.pry
+
       transaction_sets.collect do |transaction_set|
         payment = self.new
         payment.process_hippo_object(transaction_set)
@@ -35,11 +35,12 @@ module HippoEob
       @payer.state           = ts.L1000A.N4.N402
       @payer.zip_code        = ts.L1000A.N4.N403
       @payer.zip_code_4      = ts.L1000A.N4.N404
-      @payer.telephone_1     = ts.L1000A.PER.PER04
-      #@payer.telephone_2     = ts.L1000A.PER.
+      @payer.telephone_number_1     = ts.L1000A.PER.PER04
+      @payer.telephone_number_2     = ts.L1000A.PER_02.PER04
 
+      @payer.telephone_label_2 = ts.L1000A.PER_02.PER02
       @payee.name            = ts.L1000B.N1.N102
-      @payee.contact_number  = ts.L1000B.N1.N103
+      @payee.contact_number  = ts.L1000B.N1.N104
       @payee.address_line_1  = ts.L1000B.N3.N301
       @payee.address_line_2  = ts.L1000B.N3.N302
       @payee.city            = ts.L1000B.N4.N401
