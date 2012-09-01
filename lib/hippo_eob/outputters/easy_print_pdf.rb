@@ -39,7 +39,7 @@ module HippoEob
 
         @pdf.move_down initialmove_y
 
-        @pdf.font_size 8
+        @pdf.font_size 6
         @pdf.text_box  @eob.payer.name, :at =>[@left_boundary, @pdf.cursor]
         @pdf.text_box  @eob.payer.name, :align=>:right, :at =>[@right_boundary, @pdf.cursor]
         @pdf.move_down @line_height
@@ -85,19 +85,28 @@ module HippoEob
         t=[['REND-PROV','SERV-DATE','POS','PD-PROC/MODS','PD-NOS','BILLED','ALLOWED','DEDUCT','COINS','PROV-PD' ],
            ['RARC', '','','','SUB-NOS','SUB-PROC','GRP/CARC','CARC-AMT','ADJ-QTY','']
            ]
-        @pdf.table(t, :position =>@left_boundary) do
-          style(row(0..-1), :borders => [], :padding => [1, 5])
-        end
-        @pdf.move_down @line_height
+        @pdf.table(t, :position =>@left_boundary-5) do
+          style(row(0..-1), :borders => [], :padding => [0, 5])
+          style(column(0), :width => 50)
+          style(column(1), :width => 50)
+          style(column(2), :width => 30)
+          style(column(3), :width => 60)
+          style(column(4..-1), :width => 50)
+          style(row(0..1).columns(4..5), :align => :right)
+          style(row(0).columns(6..8), :align => :left)
+          style(row(1).columns(6..8), :align => :right)
 
+          style(column(-1), :width => 60, :align => :right)
+
+
+        end
+        @pdf.move_down @line_height-10
 
         #Line
         @pdf.stroke do
           @pdf.horizontal_rule
         end
-
-
-        @pdf.font_size 8
+        @pdf.font_size 6
       end
 
       def print_header_page
@@ -143,14 +152,14 @@ module HippoEob
 
           svc_info << [ provider_npi + '  ' + s.date_of_service.strftime("%m%d") + ' ' + s.date_of_service.strftime("%m%d%Y") + ' ' + s.place_of_service,
                        s.procedure_code + ' ' + s.modifier_1.to_s + ' ' + s.modifier_2.to_s + '  ',
-                       s.units_svc_paid_count.to_s ,
-                       s.charge_amount.to_s,
-                       s.allowed_amount.to_s,
-                       s.deductible_amount.to_s,
-                       s.co_insurance.to_s,
-                       s.payment_amount.to_s]
+                       s.units_svc_paid_count.to_s.to_f ,
+                       s.charge_amount.to_s.to_f,
+                       s.allowed_amount.to_s.to_f,
+                       s.deductible_amount.to_s.to_f,
+                       s.co_insurance.to_s.to_f,
+                       s.payment_amount.to_s.to_f]
 
-          svc_info << [ '','',s.original_units_svc_count.to_s,'',
+          svc_info << [ '','',s.original_units_svc_count.to_s.to_f,'',
                       get_adjustments(s.adjustments, 'SERVICE'),'','','']
 
           svc_info << ['CNTL #:' + s.service_number, '','','','','','','']
@@ -167,9 +176,9 @@ module HippoEob
           table_data << [
                             'NAME:' + c.patient_name ,
                             'HIC: ' + c.policy_number.to_s,
-                            'ACNT:'   + c.patient_number.to_s,
+                            'ACNT:'   + c.patient_number.to_s, '',
                             'ICN:'   + c.tracking_number.to_s, 'ASG: ' ,
-                            get_adjustments(c.adjustments, 'CLAIM'),'',''
+                            get_adjustments(c.adjustments, 'CLAIM'),''
                         ]
 
 
@@ -178,9 +187,9 @@ module HippoEob
           end
 
           table_data << ['PT RESP' + c.patient_reponsibility_amount.to_s, '',
-                         'CLAIM TOTALS' , c.total_submitted.to_s,
+                         'CLAIM TOTALS' , c.total_submitted.to_s.to_f,
                          '','',
-                         c.patient_reponsibility_amount.to_s,
+                         c.patient_reponsibility_amount.to_s.to_f,
                          c.payment_amount.to_s('F')
                         ]
           table_data << ['ADJ TO TOTALS:', 'PREV PD', '',
@@ -189,16 +198,20 @@ module HippoEob
                          'NET', c.payment_amount.to_s('F')
                         ]
           table_data << [
-                          'CLAIM INFORMATON FORWARDED TO: ',
-                          c.cross_over_carrier_name, '','','','','',''
+                          'CLAIM INFORMATON', ' FORWARDED TO: ',
+                          c.cross_over_carrier_name, '','','','',''
                         ]
-          table_data << ['','', c.cross_over_carrier_code, '','','','','']
+          table_data << ['',c.cross_over_carrier_code, '','','','','']
 
 
          end
 
         @pdf.table(table_data) do
-          style(row(0..-1), :borders => [], :padding => [1, 5])
+          style(row(0..-1), :borders => [], :padding => [1, 5], :size => 6)
+          style(column(0), :width => 105)
+          style(column(1), :width => 80)
+          style(column(2), :width => 80)
+          style(column(3), :width => 80)
         end
       end
 
