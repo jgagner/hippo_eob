@@ -9,31 +9,37 @@ module HippoEob
         @left_boundary    = 10
         @line_height      = 12
         @right_boundary   = 400
-
       end
 
       def generate
-        print_header_eob
-
-
-        print_detail_eob
-        print_footer
+        print_eob_header
+        print_page_header
+        print_detail
         print_page_count
         return @pdf
       end
 
       def print_page_count
         string = "PAGE #: <page> of <total>"
-        top_options = { :at => [@right_boundary, 572],
+        page_options = { :at => [@right_boundary, 500],
                        :width => 80,
                        :align => :left,
-                       :page_filter => (1..7),
+                       :page_filter => (1),
                        :start_count_at => 1
                       }
-         @pdf.number_pages string, top_options
+          @pdf.number_pages string, page_options
+
+          page_options = { :at => [@right_boundary, 698],
+                       :width => 80,
+                       :align => :left,
+                       :page_filter => (2..10),
+                       :start_count_at => 2
+                      }
+          @pdf.number_pages string, page_options
+
       end
 
-      def print_header_eob
+      def print_eob_header
         #initial_y = @pdf.cursor
         initialmove_y = 5
 
@@ -66,6 +72,11 @@ module HippoEob
         @pdf.move_down @line_height
         @pdf.text_box @eob.payer.telephone_number_2, :at =>[@left_boundary, @pdf.cursor]
         @pdf.move_down @line_height + 15
+
+        @pdf.font_size 6
+      end
+
+      def print_page_header
         @pdf.text_box @eob.payee.name, :at =>[@left_boundary, @pdf.cursor]
         @pdf.text_box 'NPI #: ' + @eob.payee.contact_number, :at=>[@right_boundary, @pdf.cursor]
         @pdf.move_down @line_height
@@ -87,43 +98,21 @@ module HippoEob
            ]
         @pdf.table(t, :position =>@left_boundary-5) do
           style(row(0..-1), :borders => [], :padding => [0, 5])
-          style(column(0), :width => 50)
-          style(column(1), :width => 50)
-          style(column(2), :width => 30)
-          style(column(3), :width => 60)
-          style(column(4..-1), :width => 50)
+          style(column(0..1), :width => 60)
+          style(column(4..8), :width => 60)
+
           style(row(0..1).columns(4..5), :align => :right)
           style(row(0).columns(6..8), :align => :left)
-          style(row(1).columns(6..8), :align => :right)
 
-          style(column(-1), :width => 60, :align => :right)
-
-
+          style(row(1).columns(6..9), :align => :right)
         end
         @pdf.move_down @line_height-10
-
-        #Line
-        @pdf.stroke do
-          @pdf.horizontal_rule
-        end
-        @pdf.font_size 6
       end
-
-      def print_header_page
-      end
-
-      def print_footer
-        #Any footer
-      end
-
 
       def start_doc_new_page
-
-        print_footer
         @pdf.start_new_page
-
-        print_header
-        @pdf.move_cursor_to 67
+        print_page_header
+        #@pdf.move_cursor_to 67
       end
 
       def get_adjustments(cas, cas_type)
@@ -132,16 +121,16 @@ module HippoEob
         cas_string = ''
         schar = '-'
         cas.each do |c|
-          if cas_type == 'CLAIM'
-            schar = ':'
-          end
-          cas_string += c.type + schar  unless c.type.nil?
-          cas_string += c.code + ' '    unless c.code.nil?
+          schar = cas_type == 'CLAIM' ? ':' : '-'
 
-          if cas_type == 'SERVICE'
-            cas_string += c.amount.to_f.to_s + ' ' unless c.amount.nil?
-          end
+          if c.type != 'PR'
+            cas_string += c.type + schar  unless c.type.nil?
+            cas_string += c.code + ' '    unless c.code.nil?
 
+            if cas_type == 'SERVICE'
+              cas_string += c.amount.to_f.to_s + ' ' unless c.amount.nil?
+            end
+          end
         end
         return cas_string
       end
@@ -163,17 +152,16 @@ module HippoEob
                       get_adjustments(s.adjustments, 'SERVICE'),'','','']
 
           svc_info << ['CNTL #:' + s.service_number, '','','','','','','']
-
+          svc_info << [ ' ']
         end
-
         return svc_info
       end
 
-      def print_detail_eob
-        #detail_items = 18
-        table_data = []
-        @eob.claim_payments.sort_by{|cp| cp.patient_name}.each do |c|
-          table_data << [
+      def claim_payment_data
+        claim_payment_data = Hash.new { |hash, key| hash[key] = Array.new }
+
+        @eob.claim_payments.sort_by{|cp| cp.patient_name}.each_with_index do |c, index|
+          claim_payment_data[index] << [
                             'NAME:' + c.patient_name ,
                             'HIC: ' + c.policy_number.to_s,
                             'ACNT:'   + c.patient_number.to_s, '',
@@ -183,35 +171,73 @@ module HippoEob
 
 
           get_services(c.services, c.provider_npi).each do |service|
-            table_data << service
+            claim_payment_data[index] <<  service
           end
 
-          table_data << ['PT RESP' + c.patient_reponsibility_amount.to_s, '',
+          claim_payment_data[index] <<  ['','','','','','','','']
+          claim_payment_data[index] <<  ['PT RESP      ' + c.patient_reponsibility_amount.to_f.to_s, '',
                          'CLAIM TOTALS' , c.total_submitted.to_s.to_f,
                          '','',
                          c.patient_reponsibility_amount.to_s.to_f,
                          c.payment_amount.to_s('F')
                         ]
-          table_data << ['ADJ TO TOTALS:', 'PREV PD', '',
-                         'INTEREST', '',
-                         'LATE FILLING CHARGE',
+          claim_payment_data[index] <<  ['ADJ TO TOTALS:', 'PREV PD',
+                         'INTEREST','',
+                         'LATE FILING CHARGE', '',
                          'NET', c.payment_amount.to_s('F')
                         ]
-          table_data << [
+          claim_payment_data[index] <<  [
                           'CLAIM INFORMATON', ' FORWARDED TO: ',
                           c.cross_over_carrier_name, '','','','',''
                         ]
-          table_data << ['',c.cross_over_carrier_code, '','','','','']
+          claim_payment_data[index] <<  ['','',c.cross_over_carrier_code,'','','']
+        end
 
+        claim_payment_data
+      end
 
-         end
+      def claim_payment_pages
+        pages = [ {:rows => [], :begin_claim_payment_index => []}  ]
 
-        @pdf.table(table_data) do
-          style(row(0..-1), :borders => [], :padding => [1, 5], :size => 6)
-          style(column(0), :width => 105)
-          style(column(1), :width => 80)
-          style(column(2), :width => 80)
-          style(column(3), :width => 80)
+        claim_payment_data.each do |claim_index, claim_payment|
+          page_length   = pages.last[:rows].length
+          maximum_lines = pages.length == 1 ? 50 : 75
+
+          if page_length + claim_payment.length > maximum_lines
+            pages << {:rows => [], :begin_claim_payment_index => []}
+          end
+
+          pages.last[:begin_claim_payment_index] << pages.last[:rows].length
+          pages.last[:rows] += claim_payment
+
+        end
+
+        pages
+      end
+
+      def print_detail
+        claim_payment_pages.each_with_index do |page_hash, index|
+
+          if index > 0
+            start_doc_new_page
+          end
+
+          @pdf.table(page_hash[:rows]) do
+            style(row(0..-1), :borders => [], :padding => [1, 5], :size => 6)
+
+            page_hash[:begin_claim_payment_index].each do |claim_payment_header_index|
+              style(row(claim_payment_header_index), :borders => [:top])
+            end
+
+            style(column(0), :width => 105)
+            style(column(1..2), :width => 80)
+            style(column(2), :align => :right)
+            style(column(3), :width => 30, :align => :right)
+            style(column(4), :width => 70)
+            style(column(5), :width => 40)
+            style(column(6), :width => 90)
+            style(column(7), :width => 40, :align => :right)
+          end
         end
       end
 

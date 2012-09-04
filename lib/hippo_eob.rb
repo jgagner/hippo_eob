@@ -30,6 +30,7 @@ if __FILE__ == $0
   payments = HippoEob::Payment.process_hipaa_file('/Users/alopiano/src/hippo_eob/xdoc/FLTEST2.EDI')
 
   payments[14].to_pdf.render_file("output.pdf")
+
   #payments.each_with_index do |payment, i|
 
     #payment.to_pdf.render_file('output.pdf')
