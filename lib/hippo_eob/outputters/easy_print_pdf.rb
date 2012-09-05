@@ -195,7 +195,7 @@ module HippoEob
                         ]
           claim_payment_data[index] <<  ['ADJ TO TOTALS:', 'PREV PD',
                          'INTEREST',format_currency(c.interest_amount),
-                         'LATE FILING CHARGE', '',
+                         'LATE FILING CHARGE', format_currency(c.late_filing_amount),
                          'NET', format_currency(c.payment_amount)
                         ]
           claim_payment_data[index] <<  [
