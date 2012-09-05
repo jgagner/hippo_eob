@@ -1,6 +1,7 @@
 module HippoEob
   class Payment
-	attr_accessor :payer, :payee, :check_number,  :date_of_check,  :trace_number, :method_type,  :amount, :claim_payments
+	attr_accessor :payer, :payee, :check_number,  :date_of_check,  :trace_number, :method_type,  :amount, :claim_payments,
+                :payment_totals
 
     def self.process_hipaa_file(filename)
 
@@ -24,6 +25,7 @@ module HippoEob
       @payer     = HippoEob::Payer.new
       @payee     = HippoEob::Payee.new
       @claim_payments = []
+      @payment_totals = [ {:number_claims => 0, :total_billed => 0 , :total_payment => 0, :patient_resp => 0 , :allowed => 0} ]
     end
 
     def process_hippo_object(ts)
@@ -58,7 +60,23 @@ module HippoEob
           claim_payment = ClaimPayment.new
           claim_payment.process_hippo_object(l2100)
           @claim_payments << claim_payment
+
+          @payment_totals.last[:total_billed] += claim_payment.total_submitted.to_f
+          @payment_totals.last[:total_payment] += claim_payment.payment_amount.to_f
+          @payment_totals.last[:patient_resp] += claim_payment.patient_reponsibility_amount.to_f unless claim_payment.patient_reponsibility_amount.nil?
+          #deduct amt
+          #total carc_amt
+          #prov pd
+          #prov adj
+
+          claim_payments.last.services.each do |svc|
+            @payment_totals.last[:allowed] += svc.allowed_amount.to_f unless svc.allowed_amount.nil?
+          end
+
         end
+
+        @payment_totals.last[:number_claims] += @claim_payments.length
+
       end
     end
 

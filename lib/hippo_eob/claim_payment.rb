@@ -11,7 +11,6 @@ module HippoEob
     end
 
     def process_hippo_object(l2100)
-#      binding.pry
       self.payment_amount               = l2100.CLP.CLP04
       self.claim_status_code            = l2100.CLP.CLP02
       self.tracking_number              = l2100.CLP.CLP07

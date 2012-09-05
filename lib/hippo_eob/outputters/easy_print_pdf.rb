@@ -1,7 +1,7 @@
 module HippoEob
   module Outputters
     class EasyPrintPDF
-      attr_accessor :eob, :pdf, :left_boundary, :line_height, :right_boundary
+      attr_accessor :eob, :pdf, :left_boundary, :line_height, :right_boundary, :totals
 
       def initialize(eob)
         @eob = eob
@@ -9,12 +9,14 @@ module HippoEob
         @left_boundary    = 10
         @line_height      = 12
         @right_boundary   = 400
+        @totals = {:total_claims => 0, :patient_responsibility => 0, :billed_amount => 0, :allowed_amount => 0}
       end
 
       def generate
         print_eob_header
         print_page_header
         print_detail
+        print_eob_footer
         print_page_count
         return @pdf
       end
@@ -153,6 +155,8 @@ module HippoEob
 
           svc_info << ['CNTL #:' + s.service_number, '','','','','','','']
           svc_info << [ ' ']
+
+          @totals[:allowed_amount] += s.allowed_amount.to_f unless s.allowed_amount.nil?
         end
         return svc_info
       end
@@ -191,19 +195,31 @@ module HippoEob
                           c.cross_over_carrier_name, '','','','',''
                         ]
           claim_payment_data[index] <<  ['','',c.cross_over_carrier_code,'','','']
+
+          totals[:total_claims] += 1
+          totals[:patient_responsibility] += c.patient_reponsibility_amount.to_f
+          totals[:billed_amount] += c.total_submitted.to_f
         end
+
 
         claim_payment_data
       end
 
       def claim_payment_pages
         pages = [ {:rows => [], :begin_claim_payment_index => []}  ]
-
+        claim_payment_length = 0
         claim_payment_data.each do |claim_index, claim_payment|
+
           page_length   = pages.last[:rows].length
           maximum_lines = pages.length == 1 ? 50 : 75
 
-          if page_length + claim_payment.length > maximum_lines
+          if claim_payment_data.length == claim_index + 1
+             claim_payment_length = claim_payment.length + 8
+          else
+            claim_payment_length =  claim_payment.length
+          end
+
+          if page_length + claim_payment_length > maximum_lines
             pages << {:rows => [], :begin_claim_payment_index => []}
           end
 
@@ -238,6 +254,22 @@ module HippoEob
             style(column(6), :width => 90)
             style(column(7), :width => 40, :align => :right)
           end
+        end
+      end
+
+      def print_eob_footer
+        footer = [['TOTALS:', '# OF','BILLED', 'ALLOWED', 'DEDUCT', 'COINS','TOTAL', 'PROV-PD', 'PROV', 'CHECK'],
+                  ['',  'CLAIMS', 'AMT', 'AMT', 'AMT', 'AMT', 'CARC-AMT','AMT', 'ADJ-AMT', 'AMT'],
+                  ['', @eob.payment_totals.last[:number_claims], @eob.payment_totals.last[:total_billed].to_f,
+                       @eob.payment_totals.last[:allowed].to_f, '', @eob.payment_totals.last[:patient_resp],'','','',@eob.amount.to_f]
+                 ]
+        @pdf.table(footer) do
+          style(row(0..-1), :borders => [], :padding => [0, 5])
+          style(row(0), :borders => [:top])
+
+          style(column(0..-1), :width => 50)
+          style(column(4..8), :width => 50)
+          style(column(-1), :width => 80)
         end
       end
 
