@@ -62,7 +62,24 @@ module HippoEob
         service.populate_hippo_object(l2110)
         @services << service
       end
+    end
 
+    def deductible_amount
+      if services.length > 0
+        services.inject(0.to_d){|memo, service| memo += service.deductible_amount || 0}
+      else
+        adj = adjustments.detect{|a| a.type == 'PR' && a.code == '1'}
+        adj.amount if adj
+      end
+    end
+
+    def coinsurance_amount
+      if services.length > 0
+        services.inject(0.to_d){|memo, service| memo += service.coinsurance_amount || 0}
+      else
+        adj = adjustments.detect{|a| a.type == 'PR' && a.code == '2'}
+        adj.amount if adj
+      end
     end
 
     def total_allowed_amount

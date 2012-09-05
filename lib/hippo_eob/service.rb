@@ -55,6 +55,5 @@ module HippoEob
       adj.amount if adj
     end
 
-
   end
 end

@@ -188,8 +188,9 @@ module HippoEob
           claim_payment_data[index] <<  ['','','','','','','','']
           claim_payment_data[index] <<  ['PT RESP      ' + format_currency(c.patient_reponsibility_amount), '',
                          'CLAIM TOTALS' , format_currency(c.total_submitted),
-                         format_currency(c.total_allowed_amount),'',
-                         format_currency(c.patient_reponsibility_amount),
+                         format_currency(c.total_allowed_amount),
+                         format_currency(c.deductible_amount),
+                         format_currency(c.coinsurance_amount),
                          format_currency(c.payment_amount)
                         ]
           claim_payment_data[index] <<  ['ADJ TO TOTALS:', 'PREV PD',
@@ -264,9 +265,12 @@ module HippoEob
                   ['',  'CLAIMS', 'AMT', 'AMT', 'AMT', 'AMT', 'CARC-AMT','AMT', 'ADJ-AMT', 'AMT'],
                   ['', @eob.total_claims, format_currency(@eob.total_billed),
                        format_currency(@eob.total_allowed_amount),
+                       format_currency(@eob.total_deductible_amount),
+                       format_currency(@eob.total_coinsurance_amount),
                        '',
-                       format_currency(@eob.patient_responsibility),'',format_currency(@eob.total_payment_amount),
-                       '',format_currency(@eob.amount.to_d)
+                       format_currency(@eob.total_payment_amount),
+                       '',
+                       format_currency(@eob.amount.to_d)
                   ]
                  ]
         @pdf.table(footer) do

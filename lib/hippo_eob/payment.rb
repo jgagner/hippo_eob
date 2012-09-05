@@ -100,6 +100,14 @@ module HippoEob
       return total_allowed.to_d.to_f
     end
 
+    def total_deductible_amount
+      @claim_payments.inject(0.to_d){|memo, cp| memo += cp.deductible_amount}
+    end
+
+    def total_coinsurance_amount
+      @claim_payments.inject(0.to_d){|memo, cp| memo += cp.coinsurance_amount}
+    end
+
     def to_pdf(outputter_klass = Outputters::EasyPrintPDF)
       outputter = outputter_klass.new(self)
 
