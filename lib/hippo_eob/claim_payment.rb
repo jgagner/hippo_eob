@@ -69,8 +69,7 @@ module HippoEob
       if services.length > 0
         services.inject(0.to_d){|memo, service| memo += service.deductible_amount || 0}
       else
-        adj = adjustments.detect{|a| a.type == 'PR' && a.code == '1'}
-        adj.amount if adj
+        adjustments.find_all{|a| a.type == 'PR' && a.code == '2'}.inject(0){|memo, adj| memo += adj.amount}
       end
     end
 
@@ -78,8 +77,15 @@ module HippoEob
       if services.length > 0
         services.inject(0.to_d){|memo, service| memo += service.coinsurance_amount || 0}
       else
-        adj = adjustments.detect{|a| a.type == 'PR' && a.code == '2'}
-        adj.amount if adj
+        adjustments.find_all{|a| a.type == 'PR' && a.code == '1'}.inject(0){|memo, adj| memo += adj.amount}
+      end
+    end
+
+    def prior_payment_amount
+      if services.length > 0
+        services.inject(0.to_d){|memo, service| memo += service.prior_payment_amount || 0}
+      else
+        adjustments.find_all{|a| a.code == '23'}.inject(0){|memo, adj| memo += adj.amount}
       end
     end
 

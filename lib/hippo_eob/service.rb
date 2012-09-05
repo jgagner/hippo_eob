@@ -49,19 +49,19 @@ module HippoEob
     end
 
     def patient_responsibility_amount
-      adj = adjustments.detect{|a| a.type == 'PR'}
-      adj.amount if adj
+      adjustments.find_all{|a| a.type == 'PR'}.inject(0){|memo, adj| memo += adj.amount}
     end
 
     def deductible_amount
-      adj = adjustments.detect{|a| a.type == 'PR' && a.code == '1'}
-      adj.amount if adj
+      adjustments.find_all{|a| a.type == 'PR' && a.code == '1'}.inject(0){|memo, adj| memo += adj.amount}
     end
 
     def coinsurance_amount
-      adj = adjustments.detect{|a| a.type == 'PR' && a.code == '2'}
-      adj.amount if adj
+      adjustments.find_all{|a| a.type == 'PR' && a.code == '2'}.inject(0){|memo, adj| memo += adj.amount}
     end
 
+    def prior_payment_amount
+      adjustments.find_all{|a| a.code == '23'}.inject(0){|memo, adj| memo += adj.amount}
+    end
   end
 end

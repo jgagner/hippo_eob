@@ -193,7 +193,7 @@ module HippoEob
                          format_currency(c.coinsurance_amount),
                          format_currency(c.payment_amount)
                         ]
-          claim_payment_data[index] <<  ['ADJ TO TOTALS:', 'PREV PD',
+          claim_payment_data[index] <<  ['ADJ TO TOTALS:', 'PREV PD      ' + format_currency(c.prior_payment_amount),
                          'INTEREST',format_currency(c.interest_amount),
                          'LATE FILING CHARGE', format_currency(c.late_filing_amount),
                          'NET', format_currency(c.payment_amount)
