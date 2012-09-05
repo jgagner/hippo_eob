@@ -277,11 +277,11 @@ module HippoEob
         end
       end
 
-      def format_currency(input)
-        number = '%01.2f' % input.to_d.round(2).to_s("F")
+      def format_currency(input, options = {:currency_symbol => '$', :delimiter => ',', :separator => '.', :precision => 2})
+        number = "%01.#{options[:precision]}f" % input.to_d.round(options[:precision]).to_s("F")
         parts = number.to_s.to_str.split('.')
-        parts[0].gsub!(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1,")
-        '$' + parts.join('.')
+        parts[0].gsub!(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1#{options[:delimiter]}")
+        options[:currency_symbol] + parts.join(options[:separator])
       end
     end
   end
