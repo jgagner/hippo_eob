@@ -281,7 +281,6 @@ module HippoEob
       def format_currency(input, options = {:currency_symbol => '$', :delimiter => ',', :separator => '.', :precision => 2})
         input ||= 0
         number  = "%01.#{options[:precision]}f" % input.to_d.round(options[:precision]).to_s("F")
-
         parts   = number.to_s.to_str.split('.')
         parts[0].gsub!(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1#{options[:delimiter]}")
         options[:currency_symbol] + parts.join(options[:separator])
