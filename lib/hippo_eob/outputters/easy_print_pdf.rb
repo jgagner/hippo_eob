@@ -136,7 +136,7 @@ module HippoEob
             cas_string += c.code + ' '    unless c.code.nil?
 
             if cas_type == 'SERVICE'
-              cas_string += '             ' +  c.amount.to_f.to_s + ' ' unless c.amount.nil?
+              cas_string += '             $' +  c.amount.to_d.round(2).to_s("F") + ' ' unless c.amount.nil?
             end
           end
         end
@@ -154,7 +154,7 @@ module HippoEob
                        s.allowed_amount.to_s.to_f,
                        s.deductible_amount.to_s.to_f,
                        s.co_insurance.to_s.to_f,
-                       s.payment_amount.to_d.to_s('$%.2F')
+                       '$' + s.payment_amount.to_d.round(2).to_s("F")
                      ]
 
           svc_info << [ '','',s.original_units_svc_count.to_s.to_f,'',
@@ -186,10 +186,10 @@ module HippoEob
           end
 
           claim_payment_data[index] <<  ['','','','','','','','']
-          claim_payment_data[index] <<  ['PT RESP      ' + c.patient_reponsibility_amount.to_f.to_s, '',
+          claim_payment_data[index] <<  ['PT RESP      ' + c.patient_reponsibility_amount.round(2).to_s("F"), '',
                          'CLAIM TOTALS' , c.total_submitted.to_s.to_f,
                          c.total_allowed_amount,'',
-                         c.patient_reponsibility_amount.to_d.to_f,
+                         c.patient_reponsibility_amount.to_d.round(2).to_s("F"),
                          c.payment_amount.to_s('F')
                         ]
           claim_payment_data[index] <<  ['ADJ TO TOTALS:', 'PREV PD',
@@ -262,10 +262,10 @@ module HippoEob
 
         footer = [['TOTALS:', '# OF','BILLED', 'ALLOWED', 'DEDUCT', 'COINS','TOTAL', 'PROV-PD', 'PROV', 'CHECK'],
                   ['',  'CLAIMS', 'AMT', 'AMT', 'AMT', 'AMT', 'CARC-AMT','AMT', 'ADJ-AMT', 'AMT'],
-                  ['', @eob.total_claims, @eob.total_billed,
-                       @eob.total_allowed_amount,
+                  ['', @eob.total_claims, format_currency(@eob.total_billed),
+                       format_currency(@eob.total_allowed_amount),
                        '',
-                       @eob.patient_responsibility,'',@eob.total_payment_amount,'',@eob.amount.to_f
+                       format_currency(@eob.patient_responsibility),'',format_currency(@eob.total_payment_amount),'',format_currency(@eob.amount)
                   ]
                  ]
         @pdf.table(footer) do
@@ -277,7 +277,12 @@ module HippoEob
         end
       end
 
+      def format_currency(input)
+        number = '%01.2f' % input.to_d.round(2).to_s("F")
+        parts = number.to_s.to_str.split('.')
+        parts[0].gsub!(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1,")
+        '$' + parts.join('.')
+      end
     end
-
   end
 end
