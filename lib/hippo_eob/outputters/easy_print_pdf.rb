@@ -1,7 +1,7 @@
 module HippoEob
   module Outputters
     class EasyPrintPDF
-      attr_accessor :eob, :pdf, :left_boundary, :line_height, :right_boundary, :totals
+      attr_accessor :eob, :pdf, :left_boundary, :line_height, :right_boundary
 
       def initialize(eob)
         @eob = eob
@@ -9,7 +9,6 @@ module HippoEob
         @left_boundary    = 10
         @line_height      = 12
         @right_boundary   = 400
-        @totals = {:total_claims => 0, :patient_responsibility => 0, :billed_amount => 0, :allowed_amount => 0}
       end
 
       def generate
@@ -29,15 +28,15 @@ module HippoEob
                        :page_filter => (1),
                        :start_count_at => 1
                       }
-          @pdf.number_pages string, page_options
+        @pdf.number_pages string, page_options
 
-          page_options = { :at => [@right_boundary, 698],
+        page_options = { :at => [@right_boundary, 698],
                        :width => 80,
                        :align => :left,
                        :page_filter => (2..10),
                        :start_count_at => 2
                       }
-          @pdf.number_pages string, page_options
+        @pdf.number_pages string, page_options
 
       end
 
@@ -95,18 +94,21 @@ module HippoEob
 
 
         @pdf.move_down @line_height +  3
-        t=[['REND-PROV','SERV-DATE','POS','PD-PROC/MODS','PD-NOS','BILLED','ALLOWED','DEDUCT','COINS','PROV-PD' ],
+        t=[['REND-PROV','SERV-DATE','POS','PD-PROC/MODS','PD-NOS','BILLED','ALLOWED','DEDUCT','COINS','       PROV-PD' ],
            ['RARC', '','','','SUB-NOS','SUB-PROC','GRP/CARC','CARC-AMT','ADJ-QTY','']
            ]
         @pdf.table(t, :position =>@left_boundary-5) do
           style(row(0..-1), :borders => [], :padding => [0, 5])
           style(column(0..1), :width => 60)
           style(column(4..8), :width => 60)
-
-          style(row(0..1).columns(4..5), :align => :right)
+          style(column(5), :width => 50, :align => :center)
+          style(row(0).columns(6), :width => 30, :align => :left)
+          style(row(1).columns(6), :width => 50)
+          style(row(0..1).columns(4), :align => :right)
           style(row(0).columns(6..8), :align => :left)
+          style(row(0).column(9), :align => :right)
+          style(row(1).columns(6..8), :align => :right)
 
-          style(row(1).columns(6..9), :align => :right)
         end
         @pdf.move_down @line_height-10
       end
@@ -126,11 +128,15 @@ module HippoEob
           schar = cas_type == 'CLAIM' ? ':' : '-'
 
           if c.type != 'PR'
+            if cas_string.include? c.type
+              c.type = ''
+              schar  = ''
+            end
             cas_string += c.type + schar  unless c.type.nil?
             cas_string += c.code + ' '    unless c.code.nil?
 
             if cas_type == 'SERVICE'
-              cas_string += c.amount.to_f.to_s + ' ' unless c.amount.nil?
+              cas_string += '             ' +  c.amount.to_f.to_s + ' ' unless c.amount.nil?
             end
           end
         end
@@ -142,13 +148,14 @@ module HippoEob
         svc.each do |s|
 
           svc_info << [ provider_npi + '  ' + s.date_of_service.strftime("%m%d") + ' ' + s.date_of_service.strftime("%m%d%Y") + ' ' + s.place_of_service,
-                       s.procedure_code + ' ' + s.modifier_1.to_s + ' ' + s.modifier_2.to_s + '  ',
+                       s.procedure_code + ' ' + s.modifier_1.to_s + ' ' + s.modifier_2.to_s + ' ' + s.modifier_3.to_s,
                        s.units_svc_paid_count.to_s.to_f ,
                        s.charge_amount.to_s.to_f,
                        s.allowed_amount.to_s.to_f,
                        s.deductible_amount.to_s.to_f,
                        s.co_insurance.to_s.to_f,
-                       s.payment_amount.to_s.to_f]
+                       s.payment_amount.to_d.to_s('$%.2F')
+                     ]
 
           svc_info << [ '','',s.original_units_svc_count.to_s.to_f,'',
                       get_adjustments(s.adjustments, 'SERVICE'),'','','']
@@ -156,10 +163,11 @@ module HippoEob
           svc_info << ['CNTL #:' + s.service_number, '','','','','','','']
           svc_info << [ ' ']
 
-          @totals[:allowed_amount] += s.allowed_amount.to_f unless s.allowed_amount.nil?
         end
         return svc_info
       end
+
+
 
       def claim_payment_data
         claim_payment_data = Hash.new { |hash, key| hash[key] = Array.new }
@@ -173,7 +181,6 @@ module HippoEob
                             get_adjustments(c.adjustments, 'CLAIM'),''
                         ]
 
-
           get_services(c.services, c.provider_npi).each do |service|
             claim_payment_data[index] <<  service
           end
@@ -181,8 +188,8 @@ module HippoEob
           claim_payment_data[index] <<  ['','','','','','','','']
           claim_payment_data[index] <<  ['PT RESP      ' + c.patient_reponsibility_amount.to_f.to_s, '',
                          'CLAIM TOTALS' , c.total_submitted.to_s.to_f,
-                         '','',
-                         c.patient_reponsibility_amount.to_s.to_f,
+                         c.total_allowed_amount,'',
+                         c.patient_reponsibility_amount.to_d.to_f,
                          c.payment_amount.to_s('F')
                         ]
           claim_payment_data[index] <<  ['ADJ TO TOTALS:', 'PREV PD',
@@ -195,14 +202,8 @@ module HippoEob
                           c.cross_over_carrier_name, '','','','',''
                         ]
           claim_payment_data[index] <<  ['','',c.cross_over_carrier_code,'','','']
-
-          totals[:total_claims] += 1
-          totals[:patient_responsibility] += c.patient_reponsibility_amount.to_f
-          totals[:billed_amount] += c.total_submitted.to_f
         end
-
-
-        claim_payment_data
+        return claim_payment_data
       end
 
       def claim_payment_pages
@@ -248,25 +249,28 @@ module HippoEob
             style(column(0), :width => 105)
             style(column(1..2), :width => 80)
             style(column(2), :align => :right)
-            style(column(3), :width => 30, :align => :right)
-            style(column(4), :width => 70)
-            style(column(5), :width => 40)
-            style(column(6), :width => 90)
+            style(column(3), :width => 40, :align => :right)
+            style(column(4), :width => 80)
+            style(column(5), :width => 30, :align => :right)
+            style(column(6), :width => 80)
             style(column(7), :width => 40, :align => :right)
           end
         end
       end
 
       def print_eob_footer
+
         footer = [['TOTALS:', '# OF','BILLED', 'ALLOWED', 'DEDUCT', 'COINS','TOTAL', 'PROV-PD', 'PROV', 'CHECK'],
                   ['',  'CLAIMS', 'AMT', 'AMT', 'AMT', 'AMT', 'CARC-AMT','AMT', 'ADJ-AMT', 'AMT'],
-                  ['', @eob.payment_totals.last[:number_claims], @eob.payment_totals.last[:total_billed].to_f,
-                       @eob.payment_totals.last[:allowed].to_f, '', @eob.payment_totals.last[:patient_resp],'','','',@eob.amount.to_f]
+                  ['', @eob.total_claims, @eob.total_billed,
+                       @eob.total_allowed_amount,
+                       '',
+                       @eob.patient_responsibility,'',@eob.total_payment_amount,'',@eob.amount.to_f
+                  ]
                  ]
         @pdf.table(footer) do
-          style(row(0..-1), :borders => [], :padding => [0, 5])
+          style(row(0..-1), :borders => [], :padding => [0, 5], :align => :right)
           style(row(0), :borders => [:top])
-
           style(column(0..-1), :width => 50)
           style(column(4..8), :width => 50)
           style(column(-1), :width => 80)

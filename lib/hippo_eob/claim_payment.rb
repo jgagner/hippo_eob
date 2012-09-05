@@ -11,17 +11,17 @@ module HippoEob
     end
 
     def process_hippo_object(l2100)
-      self.payment_amount               = l2100.CLP.CLP04
-      self.claim_status_code            = l2100.CLP.CLP02
-      self.tracking_number              = l2100.CLP.CLP07
-      self.policy_number                = l2100.NM1.NM109
-      self.patient_number               = l2100.CLP.CLP01
-      self.patient_name                 = l2100.NM1.NM103 + ', ' + l2100.NM1.NM104
-      self.patient_reponsibility_amount = l2100.CLP.CLP05
-      self.provider_npi                 = l2100.find_by_name('Service Provider Name').NM109
-      self.rendering_provider_information = l2100.find_by_name('Rendering Provider Identification').REF02
-      self.cross_over_carrier_name        = l2100.find_by_name('Crossover Carrier Name').NM103
-      self.cross_over_carrier_code        = l2100.find_by_name('Crossover Carrier Name').NM109
+      self.payment_amount                   = l2100.CLP.CLP04
+      self.claim_status_code                = l2100.CLP.CLP02
+      self.tracking_number                  = l2100.CLP.CLP07
+      self.policy_number                    = l2100.NM1.NM109
+      self.patient_number                   = l2100.CLP.CLP01
+      self.patient_name                     = l2100.NM1.NM103 + ', ' + l2100.NM1.NM104
+      self.patient_reponsibility_amount     = l2100.CLP.CLP05
+      self.provider_npi                     = l2100.find_by_name('Service Provider Name').NM109
+      self.rendering_provider_information   = l2100.find_by_name('Rendering Provider Identification').REF02
+      self.cross_over_carrier_name          = l2100.find_by_name('Crossover Carrier Name').NM103
+      self.cross_over_carrier_code          = l2100.find_by_name('Crossover Carrier Name').NM109
       self.total_submitted                  = l2100.CLP.CLP03
 
       #Claim CAS - MIA - MOA
@@ -42,8 +42,7 @@ module HippoEob
         @adjustments << adjustment if adjustment.code
       end
 
-
-      #Adjustmets on the claim
+      #Adjustments on the claim
       l2100.CAS.each do |cas|
         [2,5,8,11,14,17].each do |index|
 
@@ -61,6 +60,16 @@ module HippoEob
         service.populate_hippo_object(l2110)
         @services << service
       end
+
+    end
+
+    def total_allowed_amount
+      allowed_amount = 0
+      @services.each do |svc|
+        allowed_amount += svc.allowed_amount.to_f
+      end
+
+      return allowed_amount.to_d.to_f
     end
   end
 end

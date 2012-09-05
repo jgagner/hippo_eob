@@ -1,7 +1,6 @@
 module HippoEob
   class Payment
-	attr_accessor :payer, :payee, :check_number,  :date_of_check,  :trace_number, :method_type,  :amount, :claim_payments,
-                :payment_totals
+	attr_accessor :payer, :payee, :check_number,  :date_of_check,  :trace_number, :method_type,  :amount, :claim_payments
 
     def self.process_hipaa_file(filename)
 
@@ -25,7 +24,6 @@ module HippoEob
       @payer     = HippoEob::Payer.new
       @payee     = HippoEob::Payee.new
       @claim_payments = []
-      @payment_totals = [ {:number_claims => 0, :total_billed => 0 , :total_payment => 0, :patient_resp => 0 , :allowed => 0} ]
     end
 
     def process_hippo_object(ts)
@@ -60,24 +58,46 @@ module HippoEob
           claim_payment = ClaimPayment.new
           claim_payment.process_hippo_object(l2100)
           @claim_payments << claim_payment
-
-          @payment_totals.last[:total_billed] += claim_payment.total_submitted.to_f
-          @payment_totals.last[:total_payment] += claim_payment.payment_amount.to_f
-          @payment_totals.last[:patient_resp] += claim_payment.patient_reponsibility_amount.to_f unless claim_payment.patient_reponsibility_amount.nil?
-          #deduct amt
-          #total carc_amt
-          #prov pd
-          #prov adj
-
-          claim_payments.last.services.each do |svc|
-            @payment_totals.last[:allowed] += svc.allowed_amount.to_f unless svc.allowed_amount.nil?
-          end
-
         end
-
-        @payment_totals.last[:number_claims] += @claim_payments.length
-
       end
+    end
+
+    def total_claims
+      return @claim_payments.length
+    end
+
+    def total_payment_amount
+      total_payment_amount = 0
+      @claim_payments.each do |clm|
+        total_payment_amount += clm.payment_amount.to_f
+      end
+      return total_payment_amount.to_d.to_f
+    end
+
+    def total_billed
+      total_billed_amount = 0
+      @claim_payments.each do |clm|
+        total_billed_amount += clm.total_submitted.to_f
+      end
+      return total_billed_amount.to_d.to_f
+    end
+
+    def patient_responsibility
+      total_patient_resp_amount = 0
+      @claim_payments.each do |clm|
+        total_patient_resp_amount += clm.patient_reponsibility_amount.to_f
+      end
+      return total_patient_resp_amount.to_d.to_f
+    end
+
+    def total_allowed_amount
+      total_allowed = 0
+      @claim_payments.each do |clm|
+        clm.services.each do |svc|
+          total_allowed += svc.allowed_amount.to_f
+        end
+      end
+      return total_allowed.to_d.to_f
     end
 
     def to_pdf(outputter_klass = Outputters::EasyPrintPDF)
