@@ -136,7 +136,7 @@ module HippoEob
             cas_string += c.code + ' '    unless c.code.nil?
 
             if cas_type == 'SERVICE'
-              cas_string += '             $' +  c.amount.to_d.round(2).to_s("F") + ' ' unless c.amount.nil?
+              cas_string += '             ' +  format_currency(c.amount.to_d) + ' ' unless c.amount.nil?
             end
           end
         end
@@ -149,12 +149,12 @@ module HippoEob
 
           svc_info << [ provider_npi + '  ' + s.date_of_service.strftime("%m%d") + ' ' + s.date_of_service.strftime("%m%d%Y") + ' ' + s.place_of_service,
                        s.procedure_code + ' ' + s.modifier_1.to_s + ' ' + s.modifier_2.to_s + ' ' + s.modifier_3.to_s,
-                       s.units_svc_paid_count.to_s.to_f ,
-                       s.charge_amount.to_s.to_f,
-                       s.allowed_amount.to_s.to_f,
-                       s.deductible_amount.to_s.to_f,
-                       s.co_insurance.to_s.to_f,
-                       '$' + s.payment_amount.to_d.round(2).to_s("F")
+                       s.units_svc_paid_count.to_f.to_s,
+                       format_currency(s.charge_amount.to_d),
+                       format_currency(s.allowed_amount.to_d),
+                       format_currency(s.deductible_amount),
+                       format_currency(s.co_insurance),
+                       format_currency(s.payment_amount.to_d)
                      ]
 
           svc_info << [ '','',s.original_units_svc_count.to_s.to_f,'',
@@ -186,16 +186,16 @@ module HippoEob
           end
 
           claim_payment_data[index] <<  ['','','','','','','','']
-          claim_payment_data[index] <<  ['PT RESP      ' + c.patient_reponsibility_amount.round(2).to_s("F"), '',
-                         'CLAIM TOTALS' , c.total_submitted.to_s.to_f,
-                         c.total_allowed_amount,'',
-                         c.patient_reponsibility_amount.to_d.round(2).to_s("F"),
-                         c.payment_amount.to_s('F')
+          claim_payment_data[index] <<  ['PT RESP      ' + format_currency(c.patient_reponsibility_amount.to_d), '',
+                         'CLAIM TOTALS' , format_currency(c.total_submitted.to_d),
+                         format_currency(c.total_allowed_amount.to_d),'',
+                         format_currency(c.patient_reponsibility_amount.to_d),
+                         format_currency(c.payment_amount.to_d)
                         ]
           claim_payment_data[index] <<  ['ADJ TO TOTALS:', 'PREV PD',
                          'INTEREST','',
                          'LATE FILING CHARGE', '',
-                         'NET', c.payment_amount.to_s('F')
+                         'NET', format_currency(c.payment_amount.to_d)
                         ]
           claim_payment_data[index] <<  [
                           'CLAIM INFORMATON', ' FORWARDED TO: ',
@@ -265,7 +265,8 @@ module HippoEob
                   ['', @eob.total_claims, format_currency(@eob.total_billed),
                        format_currency(@eob.total_allowed_amount),
                        '',
-                       format_currency(@eob.patient_responsibility),'',format_currency(@eob.total_payment_amount),'',format_currency(@eob.amount)
+                       format_currency(@eob.patient_responsibility),'',format_currency(@eob.total_payment_amount),
+                       '',format_currency(@eob.amount.to_d)
                   ]
                  ]
         @pdf.table(footer) do
@@ -278,8 +279,10 @@ module HippoEob
       end
 
       def format_currency(input, options = {:currency_symbol => '$', :delimiter => ',', :separator => '.', :precision => 2})
-        number = "%01.#{options[:precision]}f" % input.to_d.round(options[:precision]).to_s("F")
-        parts = number.to_s.to_str.split('.')
+        input ||= 0
+        number  = "%01.#{options[:precision]}f" % input.to_d.round(options[:precision]).to_s("F")
+
+        parts   = number.to_s.to_str.split('.')
         parts[0].gsub!(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1#{options[:delimiter]}")
         options[:currency_symbol] + parts.join(options[:separator])
       end
