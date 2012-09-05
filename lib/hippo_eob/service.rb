@@ -3,10 +3,12 @@ module HippoEob
     attr_accessor  :service_number, :procedure_code, :date_of_service, :place_of_service,
                    :modifier_1, :modifier_2, :modifier_3, :modifier_4,
                    :charge_amount, :payment_amount, :allowed_amount, :deductible_amount, :co_insurance,
-                   :adjustments, :original_units_svc_count, :units_svc_paid_count, :total_allowed_amount
+                   :adjustments, :original_units_svc_count, :units_svc_paid_count, :total_allowed_amount,
+                   :remark_codes
 
     def initialize
       @adjustments  = []
+      @remark_codes = []
     end
 
     def populate_hippo_object(l2110)
@@ -33,6 +35,12 @@ module HippoEob
 
           @adjustments << adjustment if adjustment.code
         end
+      end
+
+      l2110.LQ.each do |lq|
+        next if lq.LQ01 != 'HE'
+
+        @remark_codes << lq.LQ02
       end
 
       @allowed_amount    = l2110.AMT.AMT02.nil? ? 0 : l2110.AMT.AMT02

@@ -157,7 +157,7 @@ module HippoEob
                        format_currency(s.payment_amount.to_d)
                      ]
 
-          svc_info << [ '','',s.original_units_svc_count.to_s.to_f,'',
+          svc_info << [ s.remark_codes.join(' '),'',s.original_units_svc_count.to_s.to_f,'',
                       get_adjustments(s.adjustments, 'SERVICE'),'','','']
 
           svc_info << ['CNTL #:' + s.service_number, '','','','','','','']
