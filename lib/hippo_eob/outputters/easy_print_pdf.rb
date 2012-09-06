@@ -187,10 +187,12 @@ module HippoEob
 
 
       def claim_payment_data
-        claim_payment_data = Hash.new { |hash, key| hash[key] = Array.new }
+        claim_payment_data = {}
 
         @eob.claim_payments.sort_by{|cp| cp.patient_name}.each_with_index do |c, index|
-          claim_payment_data[index] << [
+          claim_payment_data[index] =  {:rows => [], :styles => []}
+
+          claim_payment_data[index][:rows] << [
                             'NAME:' + c.patient_name ,
                             'HIC: ' + c.policy_number.to_s,
                             'ACNT:'   + c.patient_number.to_s, '',
@@ -199,18 +201,18 @@ module HippoEob
                         ]
 
           get_services(c.services, c.provider_npi).each do |service|
-            claim_payment_data[index] <<  service
+            claim_payment_data[index][:rows] <<  service
           end
 
-          claim_payment_data[index] <<  ['','','','','','','','']
-          claim_payment_data[index] <<  ['PT RESP      ' + format_currency(c.patient_reponsibility_amount), '',
+          claim_payment_data[index][:rows] <<  ['','','','','','','','']
+          claim_payment_data[index][:rows] <<  ['PT RESP      ' + format_currency(c.patient_reponsibility_amount), '',
                          'CLAIM TOTALS' , format_currency(c.total_submitted),
                          format_currency(c.total_allowed_amount),
                          format_currency(c.deductible_amount),
                          format_currency(c.coinsurance_amount),
                          format_currency(c.payment_amount)
                         ]
-          claim_payment_data[index] <<  ['ADJ TO TOTALS:', 'PREV PD      ' + format_currency(c.prior_payment_amount),
+          claim_payment_data[index][:rows] <<  ['ADJ TO TOTALS:', 'PREV PD      ' + format_currency(c.prior_payment_amount),
                          'INTEREST',format_currency(c.interest_amount),
                          'LATE FILING CHARGE', format_currency(c.late_filing_amount),
                          'NET', format_currency(c.payment_amount)
@@ -218,26 +220,28 @@ module HippoEob
 
           if c.reference_identifications.length > 0
             c.reference_identifications.each do |ref|
-              claim_payment_data[index] << ['','', ref.to_s]
+              claim_payment_data[index][:rows] << ['','', ref.to_s]
             end
           end
 
           if  c.cross_over_carrier_name != '' && c.cross_over_carrier_name != nil
-            claim_payment_data[index] <<  [
-                          'CLAIM INFORMATON', ' FORWARDED TO: ',
+            claim_payment_data[index][:rows] <<  [
+                          'CLAIM INFORMATION', ' FORWARDED TO: ',
                           c.cross_over_carrier_name, '','','','',''
                         ]
           end
 
-          claim_payment_data[index] <<  ['','',c.cross_over_carrier_code,'','','']
+          claim_payment_data[index][:rows] <<  ['','',c.cross_over_carrier_code,'','','']
         end
         return claim_payment_data
       end
 
       def claim_payment_pages
-        pages = [ {:rows => [], :styles => [{:row=>0, :columns=>0, :borders =>''}] } ]
+        pages = [ {:rows => [], :styles => [] } ]
         claim_payment_length = 0
-        claim_payment_data.each do |claim_index, claim_payment|
+        claim_payment_data.each do |claim_index, claim_payment_detail|
+          claim_payment        = claim_payment_detail[:rows]
+          claim_payment_styles = claim_payment_detail[:styles]
 
           page_length   = pages.last[:rows].length
           maximum_lines = pages.length == 1 ? 50 : 75
@@ -252,13 +256,10 @@ module HippoEob
             pages << {:rows => [], :styles => []}
           end
 
-          row_number = pages.last[:rows].length
+          first_row_number = pages.last[:rows].length
           pages.last[:styles] << Proc.new do
-            style(row(row_number).column(0..-1), :borders => [:top])
+            style(row(first_row_number).column(0..-1), :borders => [:top])
           end
-
-          pages.last[:rows] += claim_payment
-
         end
 
         pages
