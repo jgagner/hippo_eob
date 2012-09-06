@@ -68,6 +68,8 @@ module HippoEob
           @pdf.move_down @line_height
           @pdf.text_box @eob.payer.telephone_number_1, :at =>[@left_boundary, @pdf.cursor]
           @pdf.move_down @line_height + 15
+        else
+          @pdf.move_down @line_height + 16
         end
 
         if @eob.payer.telephone_label_2 && @eob.payer.telephone_number_2
@@ -77,6 +79,8 @@ module HippoEob
           @pdf.move_down @line_height
           @pdf.text_box @eob.payer.telephone_number_2, :at =>[@left_boundary, @pdf.cursor]
           @pdf.move_down @line_height + 15
+        else
+          @pdf.move_down @line_height + 17
         end
 
         @pdf.font_size 6
@@ -231,7 +235,7 @@ module HippoEob
       end
 
       def claim_payment_pages
-        pages = [ {:rows => [], :styles => [] } ]
+        pages = [ {:rows => [], :styles => [{:row=>0, :columns=>0, :borders =>''}] } ]
         claim_payment_length = 0
         claim_payment_data.each do |claim_index, claim_payment|
 
@@ -248,10 +252,10 @@ module HippoEob
             pages << {:rows => [], :styles => []}
           end
 
-          pages.last[:styles] << lambda do |table|
-            binding.pry
-            table.style(table.row(pages.last[:rows].length).column(0..-1), :borders => [:top])
-          end
+          a = Hash.new
+          a = {:row=>pages.last[:rows].length, :columns=>(0..-1), :borders => [:top]}
+
+          pages.last[:styles] << a
 
           pages.last[:rows] += claim_payment
 
@@ -267,21 +271,23 @@ module HippoEob
             start_doc_new_page
           end
 
-          @pdf.table(page_hash[:rows]) do |table|
-            table.style(table.row(0..-1), :borders => [], :padding => [1, 5], :size => 6)
+          @pdf.table(page_hash[:rows]) do
+            style(row(0..-1), :borders => [], :padding => [1, 5], :size => 6)
 
             page_hash[:styles].each do |style_block|
-              style_block.call(table)
+
+              style(row(style_block[:row]), :borders => style_block[:borders])
+
             end
 
-            table.style(table.column(0), :width => 105)
-            table.style(table.column(1..2), :width => 80)
-            table.style(table.column(2), :align => :right)
-            table.style(table.column(3), :width => 40, :align => :right)
-            table.style(table.column(4), :width => 80)
-            table.style(table.column(5), :width => 30, :align => :right)
-            table.style(table.column(6), :width => 80)
-            table.style(table.column(7), :width => 40, :align => :right)
+            style(column(0), :width => 105)
+            style(column(1..2), :width => 80)
+            style(column(2), :align => :right)
+            style(column(3), :width => 40, :align => :right)
+            style(column(4), :width => 80)
+            style(column(5), :width => 30, :align => :right)
+            style(column(6), :width => 80)
+            style(column(7), :width => 40, :align => :right)
           end
         end
       end
