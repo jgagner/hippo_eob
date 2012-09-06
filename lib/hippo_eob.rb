@@ -26,10 +26,11 @@ require_relative "hippo_eob/outputters/easy_print_pdf"
 module HippoEob; end
 
 if __FILE__ == $0
-#FLTEST2.EDI
+#FLTEST2.EDI  889636427  BLUE1.EDI
+#FLTEST2.EDI  889636427  BLUE1.EDI
   payments = HippoEob::Payment.process_hipaa_file('/Users/alopiano/src/hippo_eob/xdoc/BLUE1.EDI')
 
-  payment = payments.detect{|p| p.check_number == '171080928'}
+  payment = payments.detect{|p| p.check_number == '201740004'}
   payment.to_pdf.render_file("output.pdf")
 
   # payments.each_with_index do |payment, i|
