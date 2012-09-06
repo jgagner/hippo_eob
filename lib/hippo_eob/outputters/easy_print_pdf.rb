@@ -248,9 +248,9 @@ module HippoEob
             pages << {:rows => [], :styles => []}
           end
 
-          pages.last[:styles] << lambda do |table|
-            binding.pry
-            table.style(table.row(pages.last[:rows].length).column(0..-1), :borders => [:top])
+          row_number = pages.last[:rows].length
+          pages.last[:styles] << Proc.new do
+            style(row(row_number).column(0..-1), :borders => [:top])
           end
 
           pages.last[:rows] += claim_payment
@@ -267,21 +267,21 @@ module HippoEob
             start_doc_new_page
           end
 
-          @pdf.table(page_hash[:rows]) do |table|
-            table.style(table.row(0..-1), :borders => [], :padding => [1, 5], :size => 6)
+          @pdf.table(page_hash[:rows]) do
+            style(row(0..-1), :borders => [], :padding => [1, 5], :size => 6)
 
             page_hash[:styles].each do |style_block|
-              style_block.call(table)
+              instance_eval(&style_block)
             end
 
-            table.style(table.column(0), :width => 105)
-            table.style(table.column(1..2), :width => 80)
-            table.style(table.column(2), :align => :right)
-            table.style(table.column(3), :width => 40, :align => :right)
-            table.style(table.column(4), :width => 80)
-            table.style(table.column(5), :width => 30, :align => :right)
-            table.style(table.column(6), :width => 80)
-            table.style(table.column(7), :width => 40, :align => :right)
+            style(column(0), :width => 105)
+            style(column(1..2), :width => 80)
+            style(column(2), :align => :right)
+            style(column(3), :width => 40, :align => :right)
+            style(column(4), :width => 80)
+            style(column(5), :width => 30, :align => :right)
+            style(column(6), :width => 80)
+            style(column(7), :width => 40, :align => :right)
           end
         end
       end
