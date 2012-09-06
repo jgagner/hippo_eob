@@ -4,11 +4,12 @@ module HippoEob
                   :payment_amount, :patient_reponsibility_amount,  :tracking_number, :cross_over_carrier_name,
                   :cross_over_carrier_code,
                   :services,  :adjustments, :patient_name, :provider_npi, :rendering_provider_information, :total_submitted,
-                  :interest_amount, :late_filing_amount
+                  :interest_amount, :late_filing_amount, :reference_identifications
 
     def initialize
       @services    = []
       @adjustments = []
+      @reference_identifications = []
     end
 
     def process_hippo_object(l2100)
@@ -37,7 +38,7 @@ module HippoEob
       end
 
       [3,4,5].each do |index|
-
+#binding.pry
         adjustment = Adjustment.new
         adjustment.type   = "MOA"
         adjustment.code   = l2100.MOA.send(:"MOA#{index.to_s.rjust(2,'0')}")
@@ -56,6 +57,10 @@ module HippoEob
 
           @adjustments << adjustment
         end
+      end
+
+      l2100.REF.each do |ref|
+        reference_identifications << ref.REF01 + "*" + ref.REF02
       end
 
       l2100.L2110.each do |l2110|
@@ -91,9 +96,9 @@ module HippoEob
 
     def total_carc_amount
       if services.length > 0
-        @services.each.inject(0){|memo, svc| memo += svc.total_carc_amount}
+        @services.inject(0){|memo, svc| memo += svc.total_carc_amount}
       else
-        @adjustments.each.inject(0){|memo,adj| memo += adj.amount}
+        @adjustments.find_all{|a| a.type == 'PR'}.inject(0){|memo,adj| memo += adj.amount}
       end
     end
 
