@@ -212,6 +212,12 @@ module HippoEob
                          'NET', format_currency(c.payment_amount)
                         ]
 
+          if c.reference_identifications.length > 0
+            c.reference_identifications.each do |ref|
+              claim_payment_data[index] << ['','', ref.to_s]
+            end
+          end
+
           if  c.cross_over_carrier_name != '' && c.cross_over_carrier_name != nil
             claim_payment_data[index] <<  [
                           'CLAIM INFORMATON', ' FORWARDED TO: ',
@@ -225,7 +231,7 @@ module HippoEob
       end
 
       def claim_payment_pages
-        pages = [ {:rows => [], :begin_claim_payment_index => []}  ]
+        pages = [ {:rows => [], :styles => [] } ]
         claim_payment_length = 0
         claim_payment_data.each do |claim_index, claim_payment|
 
@@ -239,10 +245,14 @@ module HippoEob
           end
 
           if page_length + claim_payment_length > maximum_lines
-            pages << {:rows => [], :begin_claim_payment_index => []}
+            pages << {:rows => [], :styles => []}
           end
 
-          pages.last[:begin_claim_payment_index] << pages.last[:rows].length
+          pages.last[:styles] << lambda do |table|
+            binding.pry
+            table.style(table.row(pages.last[:rows].length).column(0..-1), :borders => [:top])
+          end
+
           pages.last[:rows] += claim_payment
 
         end
@@ -257,21 +267,21 @@ module HippoEob
             start_doc_new_page
           end
 
-          @pdf.table(page_hash[:rows]) do
-            style(row(0..-1), :borders => [], :padding => [1, 5], :size => 6)
+          @pdf.table(page_hash[:rows]) do |table|
+            table.style(table.row(0..-1), :borders => [], :padding => [1, 5], :size => 6)
 
-            page_hash[:begin_claim_payment_index].each do |claim_payment_header_index|
-              style(row(claim_payment_header_index), :borders => [:top])
+            page_hash[:styles].each do |style_block|
+              style_block.call(table)
             end
 
-            style(column(0), :width => 105)
-            style(column(1..2), :width => 80)
-            style(column(2), :align => :right)
-            style(column(3), :width => 40, :align => :right)
-            style(column(4), :width => 80)
-            style(column(5), :width => 30, :align => :right)
-            style(column(6), :width => 80)
-            style(column(7), :width => 40, :align => :right)
+            table.style(table.column(0), :width => 105)
+            table.style(table.column(1..2), :width => 80)
+            table.style(table.column(2), :align => :right)
+            table.style(table.column(3), :width => 40, :align => :right)
+            table.style(table.column(4), :width => 80)
+            table.style(table.column(5), :width => 30, :align => :right)
+            table.style(table.column(6), :width => 80)
+            table.style(table.column(7), :width => 40, :align => :right)
           end
         end
       end

@@ -60,7 +60,7 @@ module HippoEob
       end
 
       l2100.REF.each do |ref|
-        reference_identifications << ref.REF01 + "*" + ref.REF02
+        @reference_identifications << ref.REF01 + "*" + ref.REF02
       end
 
       l2100.L2110.each do |l2110|
