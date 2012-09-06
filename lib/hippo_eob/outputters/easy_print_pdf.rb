@@ -128,8 +128,12 @@ module HippoEob
           schar = cas_type == 'CLAIM' ? ':' : '-'
 
           if c.type != 'PR'
-            cas_data << c.type + schar  unless c.type.nil?
-            cas_data.last.replace  cas_data.last +  c.code + ' '   unless c.code.nil?
+            if cas_data.length > 0 and cas_data.last.include?(c.type)
+              cas_data.last.replace  cas_data.last +  c.code + ' '   unless c.code.nil?
+            else
+              cas_data << c.type + schar  unless c.type.nil?
+            end
+
             if cas_type == 'SERVICE'
               cas_data.last.replace cas_data.last + (' '*12) +  format_currency(c.amount.to_d) + ' ' unless c.amount.nil?
             end
