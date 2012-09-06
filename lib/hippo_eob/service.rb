@@ -53,7 +53,6 @@ module HippoEob
     end
 
     def total_carc_amount
-      binding.pry
        adjustments.find_all{|a| a.type != 'PR' }.inject(0) {|memo, adj| memo += adj.amount}
     end
 
