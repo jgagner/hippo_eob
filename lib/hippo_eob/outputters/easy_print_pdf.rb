@@ -63,16 +63,21 @@ module HippoEob
                        :at=>[@left_boundary, @pdf.cursor]
         @pdf.move_down @line_height + 15
 
-        @pdf.text_box 'PAYER BUSINESS CONTACT INFORMATION:', :at =>[@left_boundary, @pdf.cursor]
-        @pdf.move_down @line_height
-        @pdf.text_box @eob.payer.telephone_number_1, :at =>[@left_boundary, @pdf.cursor]
-        @pdf.move_down @line_height + 15
-        @pdf.text_box 'PAYER TECHNICAL CONTACT INFORMATION:', :at =>[@left_boundary, @pdf.cursor]
-        @pdf.move_down @line_height
-        @pdf.text_box @eob.payer.telephone_label_2, :at =>[@left_boundary, @pdf.cursor]
-        @pdf.move_down @line_height
-        @pdf.text_box @eob.payer.telephone_number_2, :at =>[@left_boundary, @pdf.cursor]
-        @pdf.move_down @line_height + 15
+        if @eob.payer.telephone_number_1
+          @pdf.text_box 'PAYER BUSINESS CONTACT INFORMATION:', :at =>[@left_boundary, @pdf.cursor]
+          @pdf.move_down @line_height
+          @pdf.text_box @eob.payer.telephone_number_1, :at =>[@left_boundary, @pdf.cursor]
+          @pdf.move_down @line_height + 15
+        end
+
+        if @eob.payer.telephone_label_2 && @eob.payer.telephone_number_2
+          @pdf.text_box 'PAYER TECHNICAL CONTACT INFORMATION:', :at =>[@left_boundary, @pdf.cursor]
+          @pdf.move_down @line_height
+          @pdf.text_box @eob.payer.telephone_label_2, :at =>[@left_boundary, @pdf.cursor]
+          @pdf.move_down @line_height
+          @pdf.text_box @eob.payer.telephone_number_2, :at =>[@left_boundary, @pdf.cursor]
+          @pdf.move_down @line_height + 15
+        end
 
         @pdf.font_size 6
       end
@@ -121,7 +126,7 @@ module HippoEob
 
       def get_adjustments(cas, cas_type)
 
-        return '' unless cas.length > 0
+        return [] unless cas.length > 0
         cas_data = []
         schar = '-'
         cas.each do |c|
@@ -146,8 +151,8 @@ module HippoEob
         svc_info = []
         svc.each do |s|
 
-          svc_info << [ provider_npi + '  ' + s.date_of_service.strftime("%m%d") + ' ' + s.date_of_service.strftime("%m%d%Y") + ' ' + s.place_of_service,
-                       s.procedure_code + ' ' + s.modifier_1.to_s + ' ' + s.modifier_2.to_s + ' ' + s.modifier_3.to_s,
+          svc_info << [ provider_npi + '  ' + s.date_of_service.strftime("%m%d%Y") + ' ' + s.place_of_service.to_s,
+                       s.procedure_code + ' ' + [s.modifier_1, s.modifier_2, s.modifier_3].compact.join(' '),
                        s.units_svc_paid_count.to_f.to_s,
                        format_currency(s.charge_amount.to_d),
                        format_currency(s.allowed_amount.to_d),
@@ -162,7 +167,7 @@ module HippoEob
           end
 
 
-          svc_info << ['CNTL #:' + s.service_number, '','','','','','','']
+          svc_info << ['CNTL #:' + s.service_number.to_s, '','','','','','','']
           svc_info << [ ' ']
 
         end
@@ -269,7 +274,7 @@ module HippoEob
                        format_currency(@eob.total_allowed_amount),
                        format_currency(@eob.total_deductible_amount),
                        format_currency(@eob.total_coinsurance_amount),
-                       '',
+                       format_currency(@eob.total_carc_amount),
                        format_currency(@eob.total_payment_amount),
                        '',
                        format_currency(@eob.amount.to_d)

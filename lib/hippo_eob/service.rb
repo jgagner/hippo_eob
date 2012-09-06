@@ -52,6 +52,11 @@ module HippoEob
       adjustments.find_all{|a| a.type == 'PR'}.inject(0){|memo, adj| memo += adj.amount}
     end
 
+    def total_carc_amount
+      binding.pry
+       adjustments.find_all{|a| a.type != 'PR' }.inject(0) {|memo, adj| memo += adj.amount}
+    end
+
     def deductible_amount
       adjustments.find_all{|a| a.type == 'PR' && a.code == '1'}.inject(0){|memo, adj| memo += adj.amount}
     end

@@ -26,14 +26,13 @@ require_relative "hippo_eob/outputters/easy_print_pdf"
 module HippoEob; end
 
 if __FILE__ == $0
+#FLTEST2.EDI
+  payments = HippoEob::Payment.process_hipaa_file('/Users/alopiano/src/hippo_eob/xdoc/BLUE1.EDI')
 
-  payments = HippoEob::Payment.process_hipaa_file('/Users/alopiano/src/hippo_eob/xdoc/FLTEST2.EDI')
+  payment = payments.detect{|p| p.check_number == '171080928'}
+  payment.to_pdf.render_file("output.pdf")
 
-  payments[14].to_pdf.render_file("output.pdf")
-
-  #payments.each_with_index do |payment, i|
-
-    #payment.to_pdf.render_file('output.pdf')
-    #`open output.pdf`
-  #end
+  # payments.each_with_index do |payment, i|
+  #   payment.to_pdf.render_file("output_#{i}.pdf")
+  # end
 end

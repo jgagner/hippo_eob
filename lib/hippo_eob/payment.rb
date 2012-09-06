@@ -108,6 +108,10 @@ module HippoEob
       @claim_payments.inject(0.to_d){|memo, cp| memo += cp.coinsurance_amount}
     end
 
+    def total_carc_amount
+      @claim_payments.inject(0.to_d){|memo, cp| memo += cp.total_carc_amount}
+    end
+
     def to_pdf(outputter_klass = Outputters::EasyPrintPDF)
       outputter = outputter_klass.new(self)
 
