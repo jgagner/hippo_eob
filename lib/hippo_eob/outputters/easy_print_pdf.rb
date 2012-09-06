@@ -252,10 +252,10 @@ module HippoEob
             pages << {:rows => [], :styles => []}
           end
 
-          a = Hash.new
-          a = {:row=>pages.last[:rows].length, :columns=>(0..-1), :borders => [:top]}
-
-          pages.last[:styles] << a
+          row_number = pages.last[:rows].length
+          pages.last[:styles] << Proc.new do
+            style(row(row_number).column(0..-1), :borders => [:top])
+          end
 
           pages.last[:rows] += claim_payment
 
@@ -275,9 +275,7 @@ module HippoEob
             style(row(0..-1), :borders => [], :padding => [1, 5], :size => 6)
 
             page_hash[:styles].each do |style_block|
-
-              style(row(style_block[:row]), :borders => style_block[:borders])
-
+              instance_eval(&style_block)
             end
 
             style(column(0), :width => 105)
