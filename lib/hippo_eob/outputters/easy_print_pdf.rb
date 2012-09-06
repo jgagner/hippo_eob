@@ -126,17 +126,20 @@ module HippoEob
 
       def get_adjustments(cas, cas_type)
 
+
         return [] unless cas.length > 0
         cas_data = []
         schar = '-'
         cas.each do |c|
           schar = cas_type == 'CLAIM' ? ':' : '-'
 
-          if c.type != 'PR'
+          add_array = (c.type == 'PR' && (c.code == '1' || c.code == '2')) ? false : true
+
+          if add_array
             if cas_data.length > 0 and cas_data.last.include?(c.type)
               cas_data.last.replace  cas_data.last +  c.code + ' '   unless c.code.nil?
             else
-              cas_data << c.type + schar  unless c.type.nil?
+              cas_data << c.type + schar  + c.code unless c.type.nil?
             end
 
             if cas_type == 'SERVICE'
@@ -144,7 +147,9 @@ module HippoEob
             end
           end
         end
+
         return cas_data
+
       end
 
       def get_services(svc, provider_npi)
@@ -160,14 +165,15 @@ module HippoEob
                        format_currency(s.co_insurance),
                        format_currency(s.payment_amount.to_d)
                      ]
-          get_adjustments(s.adjustments, 'SERVICE').each_with_index do |adj,index|
 
+          get_adjustments(s.adjustments, 'SERVICE').each_with_index do |adj,index|
             svc_info << [ s.remark_codes.join(' '),'',s.original_units_svc_count.to_s.to_f,'', adj] unless index == 0
             svc_info << ['','','','', adj] unless index > 0
           end
 
-
-          svc_info << ['CNTL #:' + s.service_number.to_s, '','','','','','','']
+          if s.service_number.to_s != '' then
+            svc_info << ['CNTL #:' + s.service_number.to_s, '','','','','','','']
+          end
           svc_info << [ ' ']
 
         end
@@ -184,7 +190,7 @@ module HippoEob
                             'NAME:' + c.patient_name ,
                             'HIC: ' + c.policy_number.to_s,
                             'ACNT:'   + c.patient_number.to_s, '',
-                            'ICN:'   + c.tracking_number.to_s, 'ASG: ' ,
+                            'ICN:'   + c.tracking_number.to_s, 'ASG: ' + c.claim_status_code.to_s,
                             get_adjustments(c.adjustments, 'CLAIM').flatten.join( ' ' ),''
                         ]
 
@@ -205,10 +211,14 @@ module HippoEob
                          'LATE FILING CHARGE', format_currency(c.late_filing_amount),
                          'NET', format_currency(c.payment_amount)
                         ]
-          claim_payment_data[index] <<  [
+
+          if  c.cross_over_carrier_name != '' && c.cross_over_carrier_name != nil
+            claim_payment_data[index] <<  [
                           'CLAIM INFORMATON', ' FORWARDED TO: ',
                           c.cross_over_carrier_name, '','','','',''
                         ]
+          end
+
           claim_payment_data[index] <<  ['','',c.cross_over_carrier_code,'','','']
         end
         return claim_payment_data
