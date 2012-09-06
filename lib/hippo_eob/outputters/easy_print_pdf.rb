@@ -122,25 +122,20 @@ module HippoEob
       def get_adjustments(cas, cas_type)
 
         return '' unless cas.length > 0
-        cas_string = ''
+        cas_data = []
         schar = '-'
         cas.each do |c|
           schar = cas_type == 'CLAIM' ? ':' : '-'
 
           if c.type != 'PR'
-            if cas_string.include? c.type
-              c.type = ''
-              schar  = ''
-            end
-            cas_string += c.type + schar  unless c.type.nil?
-            cas_string += c.code + ' '    unless c.code.nil?
-
+            cas_data << c.type + schar  unless c.type.nil?
+            cas_data.last.replace  cas_data.last +  c.code + ' '   unless c.code.nil?
             if cas_type == 'SERVICE'
-              cas_string += '             ' +  format_currency(c.amount.to_d) + ' ' unless c.amount.nil?
+              cas_data.last.replace cas_data.last + (' '*12) +  format_currency(c.amount.to_d) + ' ' unless c.amount.nil?
             end
           end
         end
-        return cas_string
+        return cas_data
       end
 
       def get_services(svc, provider_npi)
@@ -156,9 +151,12 @@ module HippoEob
                        format_currency(s.co_insurance),
                        format_currency(s.payment_amount.to_d)
                      ]
+          get_adjustments(s.adjustments, 'SERVICE').each_with_index do |adj,index|
 
-          svc_info << [ s.remark_codes.join(' '),'',s.original_units_svc_count.to_s.to_f,'',
-                      get_adjustments(s.adjustments, 'SERVICE'),'','','']
+            svc_info << [ s.remark_codes.join(' '),'',s.original_units_svc_count.to_s.to_f,'', adj] unless index == 0
+            svc_info << ['','','','', adj] unless index > 0
+          end
+
 
           svc_info << ['CNTL #:' + s.service_number, '','','','','','','']
           svc_info << [ ' ']
@@ -178,7 +176,7 @@ module HippoEob
                             'HIC: ' + c.policy_number.to_s,
                             'ACNT:'   + c.patient_number.to_s, '',
                             'ICN:'   + c.tracking_number.to_s, 'ASG: ' ,
-                            get_adjustments(c.adjustments, 'CLAIM'),''
+                            get_adjustments(c.adjustments, 'CLAIM').flatten.join( ' ' ),''
                         ]
 
           get_services(c.services, c.provider_npi).each do |service|
