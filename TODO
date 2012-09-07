@@ -1,0 +1,10 @@
+2012-09-04
+
+  Does not print page 1 on first page
+  CARC Total Amount does not balance for Blue
+  PROV Total amount missing at the footer
+  ASG is blank
+  Fix length on the page when missing all header information
+  Display glossary at the end of footer
+  Missing REF claim information (other claim related identification)
+  Test files for: CAID - Aetna - RailRoad - Tricare - Humana- UHC - Washington all carriers
