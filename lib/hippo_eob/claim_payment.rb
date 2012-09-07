@@ -97,7 +97,7 @@ module HippoEob
       if services.length > 0
         @services.inject(0){|memo, svc| memo += svc.total_carc_amount}
       else
-        @adjustments.find_all{|a| a.type == 'PR'}.inject(0){|memo,adj| memo += adj.amount}
+        @adjustments.find_all{|a| a.type != 'PR' && a.code != '23'}.inject(0){|memo,adj| memo += adj.amount}
       end
     end
 

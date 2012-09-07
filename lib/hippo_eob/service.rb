@@ -53,7 +53,7 @@ module HippoEob
     end
 
     def total_carc_amount
-       adjustments.find_all{|a| a.type != 'PR' }.inject(0) {|memo, adj| memo += adj.amount}
+       adjustments.find_all{|a| a.code a.type != 'PR' && a.code != '23'}.inject(0) {|memo, adj| memo += adj.amount}
     end
 
     def deductible_amount
