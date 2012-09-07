@@ -289,10 +289,10 @@ module HippoEob
       end
 
       def print_eob_footer
-
-        footer = [['TOTALS:', '# OF','BILLED', 'ALLOWED', 'DEDUCT', 'COINS','TOTAL', 'PROV-PD', 'PROV', 'CHECK'],
-                  ['',  'CLAIMS', 'AMT', 'AMT', 'AMT', 'AMT', 'CARC-AMT','AMT', 'ADJ-AMT', 'AMT'],
-                  ['', @eob.total_claims, format_currency(@eob.total_billed),
+        footer = []
+        footer << ['TOTALS:', '# OF','BILLED', 'ALLOWED', 'DEDUCT', 'COINS','TOTAL', 'PROV-PD', 'PROV', 'CHECK']
+        footer << ['',  'CLAIMS', 'AMT', 'AMT', 'AMT', 'AMT', 'CARC-AMT','AMT', 'ADJ-AMT', 'AMT']
+        footer << ['', @eob.total_claims, format_currency(@eob.total_billed),
                        format_currency(@eob.total_allowed_amount),
                        format_currency(@eob.total_deductible_amount),
                        format_currency(@eob.total_coinsurance_amount),
@@ -301,7 +301,11 @@ module HippoEob
                        format_currency(@eob.total_provider_adjustments),
                        format_currency(@eob.amount.to_d)
                   ]
-                 ]
+        provider_adjustments.each do |plb|
+          footer <<  plb
+        end
+
+binding.pry
         @pdf.table(footer) do
           style(row(0..-1), :borders => [], :padding => [0, 5], :align => :right)
           style(row(0), :borders => [:top])
@@ -309,7 +313,20 @@ module HippoEob
           style(column(4..8), :width => 50)
           style(column(-1), :width => 80)
         end
+
       end
+
+      def provider_adjustments
+        if @eob.adjustments.length > 0 then
+          plb = []
+          plb << ['PROVIDER ADJUSTMENT DETAILS', 'PLB REASON CODE','FCN/OTHER IDENTIFIER','','','AMOUNT']
+          @eob.adjustments.each_with_index do |adj, index|
+            plb << [adj.code.to_s, '', adj.amount.to_d] unless adj.code.length > 0
+          end
+          return plb
+        end
+      end
+
 
       def cellify(data, default_options = nil)
         default_options ||= {:borders => []}

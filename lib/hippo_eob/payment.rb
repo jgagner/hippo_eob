@@ -72,7 +72,7 @@ module HippoEob
                                 plb.send(:"PLB#{index.to_s.rjust(2,'0')}_02").to_s
           adjustment.amount   = plb.send(:"PLB#{(index+1).to_s.rjust(2,'0')}") || 0
 
-          @adjustments << adjustment
+          @adjustments << adjustment if !adjustment.code.nil?
         end
       end
     end
