@@ -187,78 +187,66 @@ module HippoEob
 
 
       def claim_payment_data
-        claim_payment_data = {}
+        claim_payment_data = Hash.new { |hash, key| hash[key] = Array.new }
 
         @eob.claim_payments.sort_by{|cp| cp.patient_name}.each_with_index do |c, index|
-          claim_payment_data[index] =  {:rows => [], :styles => []}
-
-          claim_payment_data[index][:rows] << [
-                            'NAME:' + c.patient_name ,
-                            'HIC: ' + c.policy_number.to_s,
-                            'ACNT:'   + c.patient_number.to_s, '',
-                            'ICN:'   + c.tracking_number.to_s, 'ASG: ' + c.claim_status_code.to_s,
-                            get_adjustments(c.adjustments, 'CLAIM').flatten.join( ' ' ),''
-                        ]
+         claim_payment_data[index] << [
+                          {:content => 'NAME:' + c.patient_name, :borders => [:top]} ,
+                          {:content => 'HIC: ' + c.policy_number.to_s, :borders => [:top]},
+                          {:content => 'ACNT:'   + c.patient_number.to_s, :borders => [:top]},
+                          {:content => '', :borders => [:top]},
+                          {:content => 'ICN:'   + c.tracking_number.to_s, :borders => [:top]},
+                          {:content => 'ASG: ' + c.claim_status_code.to_s, :borders => [:top]},
+                          {:content => get_adjustments(c.adjustments, 'CLAIM').flatten.join( ' ' ), :borders => [:top]},
+                          {:content => '', :borders => [:top]}
+                       ]
 
           get_services(c.services, c.provider_npi).each do |service|
-            claim_payment_data[index][:rows] <<  service
+            claim_payment_data[index] <<  service
           end
 
-          claim_payment_data[index][:rows] <<  ['','','','','','','','']
-          claim_payment_data[index][:rows] <<  ['PT RESP      ' + format_currency(c.patient_reponsibility_amount), '',
+          claim_payment_data[index] <<  ['','','','','','','','']
+          claim_payment_data[index] <<  ['PT RESP      ' + format_currency(c.patient_reponsibility_amount), '',
                          'CLAIM TOTALS' , format_currency(c.total_submitted),
                          format_currency(c.total_allowed_amount),
                          format_currency(c.deductible_amount),
                          format_currency(c.coinsurance_amount),
                          format_currency(c.payment_amount)
                         ]
-          claim_payment_data[index][:rows] <<  ['ADJ TO TOTALS:', 'PREV PD      ' + format_currency(c.prior_payment_amount),
+          claim_payment_data[index] <<  ['ADJ TO TOTALS:', 'PREV PD      ' + format_currency(c.prior_payment_amount),
                          'INTEREST',format_currency(c.interest_amount),
                          'LATE FILING CHARGE', format_currency(c.late_filing_amount),
                          'NET', format_currency(c.payment_amount)
                         ]
 
-          if c.reference_identifications.length > 0
-            c.reference_identifications.each do |ref|
-              claim_payment_data[index][:rows] << ['','', ref.to_s]
-            end
+          c.reference_identifications.each do |ref|
+            claim_payment_data[index] << ['','', {:content => ref.to_s, :align => :left}]
           end
 
           if  c.cross_over_carrier_name != '' && c.cross_over_carrier_name != nil
-            claim_payment_data[index][:rows] <<  [
+            claim_payment_data[index] <<  [
                           'CLAIM INFORMATION', ' FORWARDED TO: ',
                           c.cross_over_carrier_name, '','','','',''
                         ]
           end
 
-          claim_payment_data[index][:rows] <<  ['','',c.cross_over_carrier_code,'','','']
+          claim_payment_data[index] <<  ['','',c.cross_over_carrier_code,'','','']
         end
+
         return claim_payment_data
       end
 
       def claim_payment_pages
-        pages = [ {:rows => [], :styles => [] } ]
-        claim_payment_length = 0
-        claim_payment_data.each do |claim_index, claim_payment_detail|
-          claim_payment        = claim_payment_detail[:rows]
-          claim_payment_styles = claim_payment_detail[:styles]
-
-          page_length   = pages.last[:rows].length
+        pages = [ [] ]
+        claim_payment_data.each do |claim_index, claim_payment|
           maximum_lines = pages.length == 1 ? 50 : 75
 
-          if claim_payment_data.length == claim_index + 1
-             claim_payment_length = claim_payment.length + 8
-          else
-            claim_payment_length =  claim_payment.length
+          if pages.last.length + claim_payment.length > maximum_lines
+            pages << []
           end
 
-          if page_length + claim_payment_length > maximum_lines
-            pages << {:rows => [], :styles => []}
-          end
-
-          first_row_number = pages.last[:rows].length
-          pages.last[:styles] << Proc.new do
-            style(row(first_row_number).column(0..-1), :borders => [:top])
+          claim_payment.each do |row|
+            pages.last << row
           end
         end
 
@@ -266,18 +254,14 @@ module HippoEob
       end
 
       def print_detail
-        claim_payment_pages.each_with_index do |page_hash, index|
+        claim_payment_pages.each_with_index do |page_rows, index|
 
           if index > 0
             start_doc_new_page
           end
 
-          @pdf.table(page_hash[:rows]) do
-            style(row(0..-1), :borders => [], :padding => [1, 5], :size => 6)
-
-            page_hash[:styles].each do |style_block|
-              instance_eval(&style_block)
-            end
+          @pdf.table(cellify(page_rows)) do
+            style(row(0..-1), :padding => [1, 5], :size => 6)
 
             style(column(0), :width => 105)
             style(column(1..2), :width => 80)
@@ -312,6 +296,29 @@ module HippoEob
           style(column(4..8), :width => 50)
           style(column(-1), :width => 80)
         end
+      end
+
+      def cellify(data, default_options = {:borders => []})
+        output = []
+        data.each do |row|
+          output << []
+          row.each do |cell|
+
+            cellable =  case cell
+                        when Prawn::Table::Cell, Prawn::Table
+                          output.last << cell
+                          next
+                        when Hash
+                          default_options.merge(cell)
+                        else
+                          default_options.merge(:content => cell.to_s)
+                        end
+
+            output.last << cellable
+          end
+        end
+
+        output
       end
 
       def format_currency(input, options = {:currency_symbol => '$', :delimiter => ',', :separator => '.', :precision => 2})
