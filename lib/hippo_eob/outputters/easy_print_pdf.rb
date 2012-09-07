@@ -22,19 +22,19 @@ module HippoEob
 
       def print_page_count
         string = "PAGE #: <page> of <total>"
-        page_options = { :at => [@right_boundary, 500],
-                       :width => 80,
-                       :align => :left,
-                       :page_filter => (1),
-                       :start_count_at => 1
+        page_options = {:at             => [@right_boundary, 538],
+                        :width          => 80,
+                        :align          => :left,
+                        :page_filter    => lambda{ |pg| pg == 1 },
+                        :start_count_at => 1
                       }
         @pdf.number_pages string, page_options
 
-        page_options = { :at => [@right_boundary, 698],
-                       :width => 80,
-                       :align => :left,
-                       :page_filter => (2..10),
-                       :start_count_at => 2
+        page_options = {:at             => [@right_boundary, 696],
+                        :width          => 80,
+                        :align          => :left,
+                        :page_filter    => lambda{ |pg| pg != 1 },
+                        :start_count_at => 2
                       }
         @pdf.number_pages string, page_options
 
