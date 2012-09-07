@@ -4,11 +4,13 @@ module HippoEob
       attr_accessor :eob, :pdf, :left_boundary, :line_height, :right_boundary
 
       def initialize(eob)
-        @eob = eob
-        @pdf = Prawn::Document.new
-        @left_boundary    = 10
-        @line_height      = 12
-        @right_boundary   = 400
+        @eob                 = eob
+        @pdf                 = Prawn::Document.new
+        @left_boundary       = 10
+        @line_height         = 12
+        @right_boundary      = 400
+        @eob_header_lines    = 0
+        @page_number_heights = []
       end
 
       def generate
@@ -21,23 +23,15 @@ module HippoEob
       end
 
       def print_page_count
-        string = "PAGE #: <page> of <total>"
-        page_options = {:at             => [@right_boundary, 538],
-                        :width          => 80,
-                        :align          => :left,
-                        :page_filter    => lambda{ |pg| pg == 1 },
-                        :start_count_at => 1
-                      }
-        @pdf.number_pages string, page_options
-
-        page_options = {:at             => [@right_boundary, 696],
-                        :width          => 80,
-                        :align          => :left,
-                        :page_filter    => lambda{ |pg| pg != 1 },
-                        :start_count_at => 2
-                      }
-        @pdf.number_pages string, page_options
-
+        @page_number_heights.each_with_index do |height, index|
+          page_options = {:at             => [@right_boundary, height],
+                          :width          => 80,
+                          :align          => :left,
+                          :page_filter    => lambda{ |pg| pg == index + 1 },
+                          :start_count_at => index + 1
+                        }
+          @pdf.number_pages "PAGE #: <page> of <total>", page_options
+        end
       end
 
       def print_eob_header
@@ -50,37 +44,50 @@ module HippoEob
         @pdf.text_box  @eob.payer.name, :at =>[@left_boundary, @pdf.cursor]
         @pdf.text_box  @eob.payer.name, :align=>:right, :at =>[@right_boundary, @pdf.cursor]
         @pdf.move_down @line_height
+        @eob_header_lines += 1
 
         @pdf.text_box  @eob.payer.address_line_1.to_s,:at =>[@left_boundary, @pdf.cursor]
         @pdf.text_box  "REMITTANCE", :align=>:right, :at=>[@right_boundary, @pdf.cursor]
         @pdf.move_down @line_height
+        @eob_header_lines += 1
 
-        @pdf.text_box  @eob.payer.address_line_2.to_s, :at =>[@left_boundary, @pdf.cursor]
+        if @eob.payer.address_line_2.to_s.length > 0
+          @pdf.text_box  @eob.payer.address_line_2.to_s, :at =>[@left_boundary, @pdf.cursor]
+        else
+          @pdf.text_box  @eob.payer.city + ', ' + @eob.payer.state + ' ' + @eob.payer.zip_code,
+                       :at=>[@left_boundary, @pdf.cursor]
+        end
+
         @pdf.text_box  "ADVICE", :align=>:right, :at=>[@right_boundary, @pdf.cursor]
         @pdf.move_down @line_height
+        @eob_header_lines += 1
 
-        @pdf.text_box  @eob.payer.city + ', ' + @eob.payer.state + ' ' + @eob.payer.zip_code,
-                       :at=>[@left_boundary, @pdf.cursor]
+        if @eob.payer.address_line_2.to_s.length > 0
+          @pdf.text_box  @eob.payer.city + ', ' + @eob.payer.state + ' ' + @eob.payer.zip_code,
+                         :at=>[@left_boundary, @pdf.cursor]
+        end
         @pdf.move_down @line_height + 15
+        @eob_header_lines += 1
 
         if @eob.payer.telephone_number_1
           @pdf.text_box 'PAYER BUSINESS CONTACT INFORMATION:', :at =>[@left_boundary, @pdf.cursor]
           @pdf.move_down @line_height
+          @eob_header_lines += 1
           @pdf.text_box @eob.payer.telephone_number_1, :at =>[@left_boundary, @pdf.cursor]
           @pdf.move_down @line_height + 15
-        else
-          @pdf.move_down @line_height + 16
+          @eob_header_lines += 1
         end
 
         if @eob.payer.telephone_label_2 && @eob.payer.telephone_number_2
           @pdf.text_box 'PAYER TECHNICAL CONTACT INFORMATION:', :at =>[@left_boundary, @pdf.cursor]
           @pdf.move_down @line_height
+          @eob_header_lines += 1
           @pdf.text_box @eob.payer.telephone_label_2, :at =>[@left_boundary, @pdf.cursor]
           @pdf.move_down @line_height
+          @eob_header_lines += 1
           @pdf.text_box @eob.payer.telephone_number_2, :at =>[@left_boundary, @pdf.cursor]
           @pdf.move_down @line_height + 15
-        else
-          @pdf.move_down @line_height + 17
+          @eob_header_lines += 1
         end
 
         @pdf.font_size 6
@@ -93,6 +100,7 @@ module HippoEob
         @pdf.text_box @eob.payee.address_line_1, :at =>[@left_boundary, @pdf.cursor]
         @pdf.text_box 'DATE: '  + @eob.date_of_check.to_s, :at=>[@right_boundary, @pdf.cursor]
         @pdf.move_down @line_height
+        @page_number_heights << @pdf.cursor
 
         @pdf.text_box @eob.payee.city + ', ' + @eob.payee.state + ' ' + @eob.payee.zip_code,
                       :at=>[@left_boundary, @pdf.cursor]
@@ -239,7 +247,8 @@ module HippoEob
       def claim_payment_pages
         pages = [ [] ]
         claim_payment_data.each do |claim_index, claim_payment|
-          maximum_lines = pages.length == 1 ? 50 : 75
+          maximum_lines = 75
+          maximum_lines -= @eob_header_lines if pages.length == 1
 
           if pages.last.length + claim_payment.length > maximum_lines
             pages << []
