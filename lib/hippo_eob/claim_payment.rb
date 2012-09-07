@@ -38,7 +38,6 @@ module HippoEob
       end
 
       [3,4,5].each do |index|
-#binding.pry
         adjustment = Adjustment.new
         adjustment.type   = "MOA"
         adjustment.code   = l2100.MOA.send(:"MOA#{index.to_s.rjust(2,'0')}")

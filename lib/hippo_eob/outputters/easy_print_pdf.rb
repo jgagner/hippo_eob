@@ -54,7 +54,7 @@ module HippoEob
         if @eob.payer.address_line_2.to_s.length > 0
           @pdf.text_box  @eob.payer.address_line_2.to_s, :at =>[@left_boundary, @pdf.cursor]
         else
-          @pdf.text_box  @eob.payer.city + ', ' + @eob.payer.state + ' ' + @eob.payer.zip_code,
+          @pdf.text_box  @eob.payer.city + ', ' + @eob.payer.state + ' ' + format_postal_code(@eob.payer.zip_code),
                        :at=>[@left_boundary, @pdf.cursor]
         end
 
@@ -63,7 +63,7 @@ module HippoEob
         @eob_header_lines += 1
 
         if @eob.payer.address_line_2.to_s.length > 0
-          @pdf.text_box  @eob.payer.city + ', ' + @eob.payer.state + ' ' + @eob.payer.zip_code,
+          @pdf.text_box  @eob.payer.city + ', ' + @eob.payer.state + ' ' + format_postal_code(@eob.payer.zip_code),
                          :at=>[@left_boundary, @pdf.cursor]
         end
         @pdf.move_down @line_height + 15
@@ -73,7 +73,7 @@ module HippoEob
           @pdf.text_box 'PAYER BUSINESS CONTACT INFORMATION:', :at =>[@left_boundary, @pdf.cursor]
           @pdf.move_down @line_height
           @eob_header_lines += 1
-          @pdf.text_box @eob.payer.telephone_number_1, :at =>[@left_boundary, @pdf.cursor]
+          @pdf.text_box format_telephone_number(@eob.payer.telephone_number_1), :at =>[@left_boundary, @pdf.cursor]
           @pdf.move_down @line_height + 15
           @eob_header_lines += 1
         end
@@ -85,7 +85,7 @@ module HippoEob
           @pdf.text_box @eob.payer.telephone_label_2, :at =>[@left_boundary, @pdf.cursor]
           @pdf.move_down @line_height
           @eob_header_lines += 1
-          @pdf.text_box @eob.payer.telephone_number_2, :at =>[@left_boundary, @pdf.cursor]
+          @pdf.text_box format_telephone_number(@eob.payer.telephone_number_2), :at =>[@left_boundary, @pdf.cursor]
           @pdf.move_down @line_height + 15
           @eob_header_lines += 1
         end
@@ -102,7 +102,7 @@ module HippoEob
         @pdf.move_down @line_height
         @page_number_heights << @pdf.cursor
 
-        @pdf.text_box @eob.payee.city + ', ' + @eob.payee.state + ' ' + @eob.payee.zip_code,
+        @pdf.text_box @eob.payee.city + ', ' + @eob.payee.state + ' ' + format_postal_code(@eob.payee.zip_code),
                       :at=>[@left_boundary, @pdf.cursor]
 
 
@@ -331,6 +331,19 @@ module HippoEob
         end
 
         output
+      end
+
+      def format_telephone_number(phone_number)
+        phone_number = phone_number.rjust(10, '0')
+        "(#{phone_number[0,3]}) #{phone_number[3,3]}-#{phone_number[6,4]}"
+      end
+
+      def format_postal_code(postal_code)
+        if postal_code.to_s.length == 9
+          postal_code.to_s[0,5] + '-' + postal_code.to_s[5,4]
+        else
+          postal_code.to_s[0,5]
+        end
       end
 
       def format_currency(input, options = {:currency_symbol => '$', :delimiter => ',', :separator => '.', :precision => 2})
