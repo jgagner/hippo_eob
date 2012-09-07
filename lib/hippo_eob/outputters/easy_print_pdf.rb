@@ -298,7 +298,7 @@ module HippoEob
                        format_currency(@eob.total_coinsurance_amount),
                        format_currency(@eob.total_carc_amount),
                        format_currency(@eob.total_payment_amount),
-                       '',
+                       format_currency(@eob.total_provider_adjustments),
                        format_currency(@eob.amount.to_d)
                   ]
                  ]

@@ -63,18 +63,27 @@ module HippoEob
       end
 
       ts.PLB.each do |plb|
-        adjustment          = Adjustment.new
-        adjustment.category = :plb
-        adjustment.type     = 'PLB'
-        adjustment.code     = plb.PLB03_01
-        adjustment.amount   = cas.send(:"CAS#{(index+1).to_s.rjust(2,'0')}")
 
-        @adjustments << adjustment
+         [3,5,7,9,11,13].each do |index|
+
+          adjustment          = Adjustment.new
+          adjustment.type     = 'PLB'
+          adjustment.code     = plb.send(:"PLB#{index.to_s.rjust(2,'0')}_01").to_s +
+                                plb.send(:"PLB#{index.to_s.rjust(2,'0')}_02").to_s
+          adjustment.amount   = plb.send(:"PLB#{(index+1).to_s.rjust(2,'0')}") || 0
+
+          @adjustments << adjustment
+        end
       end
     end
 
     def total_claims
       return @claim_payments.length
+    end
+
+    def total_provider_adjustments
+      adjustments.inject(0.to_d){|memo, adj| memo += adj.amount}
+
     end
 
     def total_payment_amount
