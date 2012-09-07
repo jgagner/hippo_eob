@@ -27,9 +27,11 @@ module HippoEob; end
 
 if __FILE__ == $0
   #payments = HippoEob::Payment.process_hipaa_file('xdoc/FLTEST2.EDI')
-  payments = HippoEob::Payment.process_hipaa_file('xdoc/BLUE1.EDI')
+  #payment = payments.detect{|p| p.check_number == '889636676'}
 
+  payments = HippoEob::Payment.process_hipaa_file('xdoc/BLUE1.EDI')
   payment = payments.detect{|p| p.check_number == '201740004'}
+
   payment.to_pdf.render_file("output.pdf")
   `open output.pdf`
 
