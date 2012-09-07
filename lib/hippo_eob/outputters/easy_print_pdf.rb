@@ -7,7 +7,7 @@ module HippoEob
         @eob                 = eob
         @pdf                 = Prawn::Document.new
         @left_boundary       = 10
-        @line_height         = 12
+        @line_height         = 8
         @right_boundary      = 400
         @eob_header_lines    = 0
         @page_number_heights = []
@@ -127,7 +127,7 @@ module HippoEob
           style(row(1).columns(6..8), :align => :right)
 
         end
-        @pdf.move_down @line_height-10
+        @pdf.move_down @line_height
       end
 
       def start_doc_new_page
@@ -239,9 +239,8 @@ module HippoEob
                           'CLAIM INFORMATION', ' FORWARDED TO: ',
                           c.cross_over_carrier_name, '','','','',''
                         ]
+            claim_payment_data[index] <<  ['','',c.cross_over_carrier_code,'','','']
           end
-
-          claim_payment_data[index] <<  ['','',c.cross_over_carrier_code,'','','']
         end
 
         return claim_payment_data
@@ -250,7 +249,7 @@ module HippoEob
       def claim_payment_pages
         pages = [ [] ]
         claim_payment_data.each do |claim_index, claim_payment|
-          maximum_lines = 75
+          maximum_lines = 79
           maximum_lines -= @eob_header_lines if pages.length == 1
 
           if pages.last.length + claim_payment.length > maximum_lines
