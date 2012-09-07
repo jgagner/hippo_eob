@@ -168,14 +168,14 @@ module HippoEob
         svc_info = []
         svc.each do |s|
 
-          svc_info << [ provider_npi + '  ' + s.date_of_service.strftime("%m%d%Y") + ' ' + s.place_of_service.to_s,
-                       s.procedure_code + ' ' + [s.modifier_1, s.modifier_2, s.modifier_3].compact.join(' '),
-                       s.units_svc_paid_count.to_f.to_s,
-                       format_currency(s.charge_amount.to_d),
-                       format_currency(s.allowed_amount.to_d),
-                       format_currency(s.deductible_amount),
-                       format_currency(s.co_insurance),
-                       format_currency(s.payment_amount.to_d)
+          svc_info << [{:content => provider_npi + '  ' + s.date_of_service.strftime("%m%d%Y") + ' ' + s.place_of_service.to_s, :border_color => 'E3E3E3', :borders => [:top]},
+                       {:content => s.procedure_code + ' ' + [s.modifier_1, s.modifier_2, s.modifier_3].compact.join(' '), :border_color => 'E3E3E3', :borders => [:top]},
+                       {:content => s.units_svc_paid_count.to_f.to_s, :border_color => 'E3E3E3', :borders => [:top]},
+                       {:content => format_currency(s.charge_amount.to_d), :border_color => 'E3E3E3', :borders => [:top]},
+                       {:content => format_currency(s.allowed_amount.to_d), :border_color => 'E3E3E3', :borders => [:top]},
+                       {:content => format_currency(s.deductible_amount), :border_color => 'E3E3E3', :borders => [:top]},
+                       {:content => format_currency(s.co_insurance), :border_color => 'E3E3E3', :borders => [:top]},
+                       {:content => format_currency(s.payment_amount.to_d), :border_color => 'E3E3E3', :borders => [:top]},
                      ]
 
           get_adjustments(s.adjustments, 'SERVICE').each_with_index do |adj,index|
@@ -184,9 +184,12 @@ module HippoEob
           end
 
           if s.service_number.to_s != '' then
-            svc_info << ['CNTL #:' + s.service_number.to_s, '','','','','','','']
+            svc_info << [
+              {:content => 'CNTL #:' + s.service_number.to_s, :border_color => 'E3E3E3', :borders => [:bottom]},
+              blank = {:content => '', :border_color => 'E3E3E3', :borders => [:bottom]},
+              blank, blank, blank, blank, blank, blank
+            ]
           end
-          svc_info << [ ' ']
 
         end
         return svc_info
