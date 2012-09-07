@@ -305,7 +305,7 @@ module HippoEob
           footer <<  plb
         end
 
-binding.pry
+
         @pdf.table(footer) do
           style(row(0..-1), :borders => [], :padding => [0, 5], :align => :right)
           style(row(0), :borders => [:top])
@@ -319,9 +319,10 @@ binding.pry
       def provider_adjustments
         if @eob.adjustments.length > 0 then
           plb = []
-          plb << ['PROVIDER ADJUSTMENT DETAILS', 'PLB REASON CODE','FCN/OTHER IDENTIFIER','','','AMOUNT']
+          plb << [' ']
+          plb << ['PROVIDER', 'DETAILS:', 'PLB CODE','','FCN/ ID', '','', '', 'AMOUNT']
           @eob.adjustments.each_with_index do |adj, index|
-            plb << [adj.code.to_s, '', adj.amount.to_d] unless adj.code.length > 0
+            plb << ['','',adj.code[0,2].to_s, '', adj.code[2..-1].to_s, '', '','',format_currency(adj.amount.to_d)] unless adj.code.to_s.length == 0
           end
           return plb
         end
