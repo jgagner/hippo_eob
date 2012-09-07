@@ -202,11 +202,11 @@ module HippoEob
 
         @eob.claim_payments.sort_by{|cp| cp.patient_name}.each_with_index do |c, index|
          claim_payment_data[index] << [
-                          {:content => 'NAME:' + c.patient_name, :borders => [:top]} ,
+                          {:content => 'NAME:' + c.patient_name[0,20], :borders => [:top]},
                           {:content => 'HIC: ' + c.policy_number.to_s, :borders => [:top]},
                           {:content => 'ACNT:'   + c.patient_number.to_s, :borders => [:top]},
                           {:content => '', :borders => [:top]},
-                          {:content => 'ICN:'   + c.tracking_number.to_s, :borders => [:top]},
+                          {:content => 'ICN:'   + c.tracking_number.to_s, :borders => [:top], :single_line => true, :overflow => :shrink_to_fit},
                           {:content => '', :borders => [:top]},
                           {:content => get_adjustments(c.adjustments, 'CLAIM').flatten.join( ' ' ), :borders => [:top]},
                           {:content => '', :borders => [:top]}
