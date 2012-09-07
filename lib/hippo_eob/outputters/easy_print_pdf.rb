@@ -272,18 +272,20 @@ module HippoEob
             start_doc_new_page
           end
 
-          @pdf.table(cellify(page_rows)) do
-            style(row(0..-1), :padding => [1, 5], :size => 6)
+          data = cellify(page_rows,
+                         :padding => [1, 5], :size => 6, :borders => [],
+                         :columns => {
+                            0 => {:width => 105},
+                            1 => {:width => 80},
+                            2 => {:width => 80, :align => :right},
+                            3 => {:width => 40, :align => :right},
+                            4 => {:width => 75},
+                            5 => {:width => 40, :align => :right},
+                            6 => {:width => 75},
+                            7 => {:width => 40, :align => :right}
+                          })
 
-            style(column(0), :width => 105)
-            style(column(1..2), :width => 80)
-            style(column(2), :align => :right)
-            style(column(3), :width => 40, :align => :right)
-            style(column(4), :width => 80)
-            style(column(5), :width => 30, :align => :right)
-            style(column(6), :width => 80)
-            style(column(7), :width => 40, :align => :right)
-          end
+          @pdf.table(data)
         end
       end
 
@@ -310,20 +312,31 @@ module HippoEob
         end
       end
 
-      def cellify(data, default_options = {:borders => []})
-        output = []
+      def cellify(data, default_options = nil)
+        default_options ||= {:borders => []}
+        output            = []
+        row_options       = default_options.delete(:rows)     || Hash.new {|h,k| h[k] = {}}
+        column_options    = default_options.delete(:columns)  || Hash.new {|h,k| h[k] = {}}
+
+        current_row = -1
         data.each do |row|
-          output << []
+          current_row    += 1
+          current_column  = -1
+          output         << []
+
+          current_row_options = row_options[current_row]
           row.each do |cell|
+            current_column         += 1
+            current_column_options = column_options[current_column]
 
             cellable =  case cell
                         when Prawn::Table::Cell, Prawn::Table
                           output.last << cell
                           next
                         when Hash
-                          default_options.merge(cell)
+                          default_options.merge(current_row_options).merge(current_column_options).merge(cell)
                         else
-                          default_options.merge(:content => cell.to_s)
+                          default_options.merge(current_row_options).merge(current_column_options).merge(:content => cell.to_s)
                         end
 
             output.last << cellable
