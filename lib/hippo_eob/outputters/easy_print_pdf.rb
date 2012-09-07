@@ -155,7 +155,7 @@ module HippoEob
             end
 
             if cas_type == 'SERVICE'
-              cas_data.last.replace cas_data.last + (' '*12) +  format_currency(c.amount.to_d) + ' ' unless c.amount.nil?
+              cas_data.last.replace cas_data.last + format_currency(c.amount.to_d).rjust(18) unless c.amount.nil?
             end
           end
         end
@@ -237,7 +237,7 @@ module HippoEob
           if  c.cross_over_carrier_name != '' && c.cross_over_carrier_name != nil
             claim_payment_data[index] <<  [
                           'CLAIM INFORMATION', ' FORWARDED TO: ',
-                          c.cross_over_carrier_name, '','','','',''
+                          {:content => c.cross_over_carrier_name, :single_line => true, :overflow => :truncate}
                         ]
             claim_payment_data[index] <<  ['','',c.cross_over_carrier_code,'','','']
           end
