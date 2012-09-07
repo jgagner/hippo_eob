@@ -196,7 +196,7 @@ module HippoEob
                           {:content => 'ACNT:'   + c.patient_number.to_s, :borders => [:top]},
                           {:content => '', :borders => [:top]},
                           {:content => 'ICN:'   + c.tracking_number.to_s, :borders => [:top]},
-                          {:content => 'ASG: ' + c.claim_status_code.to_s, :borders => [:top]},
+                          {:content => '', :borders => [:top]},
                           {:content => get_adjustments(c.adjustments, 'CLAIM').flatten.join( ' ' ), :borders => [:top]},
                           {:content => '', :borders => [:top]}
                        ]
