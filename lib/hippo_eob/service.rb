@@ -28,10 +28,10 @@ module HippoEob
       l2110.CAS.each do |cas|
         [2,5,8,11,14,17].each do |index|
 
-          adjustment = Adjustment.new
-          adjustment.type   = cas.CAS01
-          adjustment.code   = cas.send(:"CAS#{index.to_s.rjust(2,'0')}")
-          adjustment.amount = cas.send(:"CAS#{(index+1).to_s.rjust(2,'0')}")
+          adjustment          = Adjustment.new
+          adjustment.type     = cas.CAS01
+          adjustment.code     = cas.send(:"CAS#{index.to_s.rjust(2,'0')}")
+          adjustment.amount   = cas.send(:"CAS#{(index+1).to_s.rjust(2,'0')}")
 
           @adjustments << adjustment if adjustment.code
         end

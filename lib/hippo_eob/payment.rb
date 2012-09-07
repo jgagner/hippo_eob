@@ -1,6 +1,6 @@
 module HippoEob
   class Payment
-	attr_accessor :payer, :payee, :check_number,  :date_of_check,  :trace_number, :method_type,  :amount, :claim_payments
+	attr_accessor :payer, :payee, :check_number,  :date_of_check,  :trace_number, :method_type,  :amount, :claim_payments, :adjustments
 
     def self.process_hipaa_file(filename)
 
@@ -21,9 +21,10 @@ module HippoEob
     end
 
     def initialize
-      @payer     = HippoEob::Payer.new
-      @payee     = HippoEob::Payee.new
+      @payer          = HippoEob::Payer.new
+      @payee          = HippoEob::Payee.new
       @claim_payments = []
+      @adjustments    = []
     end
 
     def process_hippo_object(ts)
@@ -59,6 +60,16 @@ module HippoEob
           claim_payment.process_hippo_object(l2100)
           @claim_payments << claim_payment
         end
+      end
+
+      ts.PLB.each do |plb|
+        adjustment          = Adjustment.new
+        adjustment.category = :plb
+        adjustment.type     = 'PLB'
+        adjustment.code     = plb.PLB03_01
+        adjustment.amount   = cas.send(:"CAS#{(index+1).to_s.rjust(2,'0')}")
+
+        @adjustments << adjustment
       end
     end
 

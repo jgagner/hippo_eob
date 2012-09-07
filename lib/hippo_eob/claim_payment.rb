@@ -31,17 +31,19 @@ module HippoEob
       #Claim CAS - MIA - MOA
       [5,20,21].each do |index|
 
-        adjustment = Adjustment.new
-        adjustment.type   = "MIA"
-        adjustment.code   = l2100.MIA.send(:"MIA#{index.to_s.rjust(2,'0')}")
+        adjustment          = Adjustment.new
+        adjustment.type     = "MIA"
+        adjustment.code     = l2100.MIA.send(:"MIA#{index.to_s.rjust(2,'0')}")
+
         @adjustments << adjustment if adjustment.code
       end
 
       [3,4,5].each do |index|
-        adjustment = Adjustment.new
-        adjustment.type   = "MOA"
-        adjustment.code   = l2100.MOA.send(:"MOA#{index.to_s.rjust(2,'0')}")
-        adjustment.amount = l2100.MOA.send(:"MOA#{(index+1).to_s.rjust(2,'0')}")
+        adjustment          = Adjustment.new
+        adjustment.type     = "MOA"
+        adjustment.code     = l2100.MOA.send(:"MOA#{index.to_s.rjust(2,'0')}")
+        adjustment.amount   = l2100.MOA.send(:"MOA#{(index+1).to_s.rjust(2,'0')}")
+
         @adjustments << adjustment if adjustment.code
       end
 
@@ -49,10 +51,10 @@ module HippoEob
       l2100.CAS.each do |cas|
         [2,5,8,11,14,17].each do |index|
 
-          adjustment = Adjustment.new
-          adjustment.type   = cas.CAS01
-          adjustment.code   = cas.send(:"CAS#{index.to_s.rjust(2,'0')}")
-          adjustment.amount = cas.send(:"CAS#{(index+1).to_s.rjust(2,'0')}")
+          adjustment          = Adjustment.new
+          adjustment.type     = cas.CAS01
+          adjustment.code     = cas.send(:"CAS#{index.to_s.rjust(2,'0')}")
+          adjustment.amount   = cas.send(:"CAS#{(index+1).to_s.rjust(2,'0')}")
 
           @adjustments << adjustment
         end
