@@ -11,6 +11,7 @@ module HippoEob
         @right_boundary      = 400
         @eob_header_lines    = 0
         @page_number_heights = []
+        @page_row_counter    = 0
       end
 
       def generate
@@ -18,6 +19,7 @@ module HippoEob
         print_page_header
         print_detail
         print_eob_footer
+        print_glossary
         print_page_count
         return @pdf
       end
@@ -111,9 +113,12 @@ module HippoEob
 
 
         @pdf.move_down @line_height +  3
+      end
+
+      def print_claim_payment_header
         t=[['REND-PROV','SERV-DATE','POS','PD-PROC/MODS','PD-NOS','BILLED','ALLOWED','DEDUCT','COINS','       PROV-PD' ],
            ['RARC', '','','','SUB-NOS','SUB-PROC','GRP/CARC','CARC-AMT','ADJ-QTY','']
-           ]
+          ]
         @pdf.table(t, :position =>@left_boundary-5) do
           style(row(0..-1), :borders => [], :padding => [0, 5])
           style(column(0..1), :width => 60)
@@ -130,19 +135,27 @@ module HippoEob
         @pdf.move_down @line_height
       end
 
+
       def start_doc_new_page
         @pdf.start_new_page
         print_page_header
         #@pdf.move_cursor_to 67
       end
 
+      def page_maximum_lines(page_number)
+        maximum_lines = 79
+        maximum_lines -= @eob_header_lines if page_number == 1
+        maximum_lines
+      end
+
       def get_adjustments(cas, cas_type)
-
-
         return [] unless cas.length > 0
+
         cas_data = []
         schar = '-'
         cas.each do |c|
+          next if c.amount == 0
+
           schar = cas_type == 'CLAIM' ? ':' : '-'
 
           add_array = (c.type == 'PR' && (c.code == '1' || c.code == '2')) ? false : true
@@ -155,7 +168,7 @@ module HippoEob
             end
 
             if cas_type == 'SERVICE'
-              cas_data.last.replace cas_data.last + format_currency(c.amount.to_d).rjust(18) unless c.amount.nil?
+              cas_data.last.replace cas_data.last + format_currency(c.amount.to_d).rjust(18)
             end
           end
         end
@@ -249,10 +262,7 @@ module HippoEob
       def claim_payment_pages
         pages = [ [] ]
         claim_payment_data.each do |claim_index, claim_payment|
-          maximum_lines = 79
-          maximum_lines -= @eob_header_lines if pages.length == 1
-
-          if pages.last.length + claim_payment.length > maximum_lines
+          if pages.last.length + claim_payment.length > page_maximum_lines(pages.length)
             pages << []
           end
 
@@ -269,6 +279,8 @@ module HippoEob
 
           if index > 0
             start_doc_new_page
+            print_claim_payment_header
+            @page_row_counter = 0
           end
 
           data = cellify(page_rows,
@@ -285,6 +297,7 @@ module HippoEob
                           })
 
           @pdf.table(data)
+          @page_row_counter += page_rows.length
         end
       end
 
@@ -302,6 +315,11 @@ module HippoEob
                        format_currency(@eob.amount.to_d)
                   ]
 
+        if @page_row_counter + footer.length > page_maximum_lines(@pdf.page_number)
+          start_doc_new_page
+          @page_row_counter = 0
+        end
+
         @pdf.table(footer) do
           style(row(0..-1), :borders => [], :padding => [0, 5], :align => :right)
           style(row(0), :borders => [:top])
@@ -309,6 +327,8 @@ module HippoEob
           style(column(4..8), :width => 50)
           style(column(-1), :width => 80)
         end
+
+        @page_row_counter += footer.length
 
         provider_adjustments
 
@@ -318,20 +338,57 @@ module HippoEob
         if @eob.adjustments.length > 0 then
           plb = []
           plb << [' ']
-          plb << ['PROVIDER ADJ DETAILS:', 'TYPE','AMOUNT']
+          plb << [{:content => 'PROVIDER ADJ DETAILS:', :font_style => :bold}, 'TYPE','AMOUNT']
           @eob.adjustments.each_with_index do |adj, index|
-            plb << ['', adj.code.to_s, format_currency(adj.amount.to_d)] unless adj.code.to_s.length == 0
+            plb << ['', adj.code.to_s + ' - ' + adj.description.to_s, format_currency(adj.amount.to_d)] unless adj.code.to_s.length == 0
           end
 
-          @pdf.table(plb) do
+          if @page_row_counter + plb.length + 2 > page_maximum_lines(@pdf.page_number)
+            start_doc_new_page
+            @page_row_counter = 0
+          else
+            @pdf.move_down @line_height * 2
+          end
+
+          @pdf.table(cellify(plb)) do
             style(row(0..-1), :borders => [], :padding => [0, 5], :align => :right)
             style(column(0),      :width => 100)
             style(column(1..2),   :width => 80)
-
           end
+
+          @page_row_counter += plb.length + 2
         end
       end
 
+      def print_glossary
+        output  = [['Code','Description']]
+        @eob.code_glossary.sort_by{|code, value| code}.each do |(code, description)|
+          output << [
+            {:content => code,        :borders => [:top], :border_color => 'E3E3E3'},
+            {:content => description, :borders => [:top], :border_color => 'E3E3E3'},
+          ]
+        end
+
+        data = cellify(output,
+                         :padding => [1, 5], :borders => [],
+                         :columns => {
+                            0 => {:width => 50},
+                            1 => {:width => 485}
+                          }
+                      )
+
+        if @page_row_counter + data.length + 6 > page_maximum_lines(@pdf.page_number)
+          start_doc_new_page
+          @page_row_counter = 0
+        end
+
+        @pdf.move_down @line_height * 3
+        @pdf.text_box  'GLOSSARY: GROUP, REASON, MOA, MIA, REMARK AND REASON CODES', :style => :bold, :at =>[0, @pdf.cursor]
+        @pdf.move_down @line_height
+
+        @pdf.table(data)
+        @page_row_counter += data.length + 6
+      end
 
       def cellify(data, default_options = nil)
         default_options ||= {:borders => []}
