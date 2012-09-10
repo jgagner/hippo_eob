@@ -66,13 +66,13 @@ module HippoEob
 
          [3,5,7,9,11,13].each do |index|
 
-          adjustment          = Adjustment.new
-          adjustment.type     = 'PLB'
-          adjustment.code     = plb.send(:"PLB#{index.to_s.rjust(2,'0')}_01").to_s + ' - ' +
-                                plb.send(:"PLB#{index.to_s.rjust(2,'0')}_02").to_s
-          adjustment.amount   = plb.send(:"PLB#{(index+1).to_s.rjust(2,'0')}") || 0
+          adjustment              = Adjustment.new
+          adjustment.type         = 'PLB'
+          adjustment.code         = plb.send(:"PLB#{index.to_s.rjust(2,'0')}_01")
+          adjustment.amount       = plb.send(:"PLB#{(index+1).to_s.rjust(2,'0')}") || 0
+          adjustment.description  = plb.send(:"PLB#{index.to_s.rjust(2,'0')}_02")
 
-          @adjustments << adjustment if adjustment.code.to_s.length > 4
+          @adjustments << adjustment if adjustment.code.to_s.length > 0
         end
       end
     end
@@ -130,6 +130,20 @@ module HippoEob
 
     def total_carc_amount
       @claim_payments.inject(0.to_d){|memo, cp| memo += cp.total_carc_amount}
+    end
+
+    def code_glossary
+      output = {}
+
+      adjustments.each do |adjustment|
+        output[adjustment.code] = adjustment.description
+      end
+
+      claim_payments.each do |claim_payment|
+        output.merge!(claim_payment.code_glossary)
+      end
+
+      output
     end
 
     def to_pdf(outputter_klass = Outputters::EasyPrintPDF)

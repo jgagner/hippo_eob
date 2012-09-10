@@ -35,6 +35,10 @@ module HippoEob
         adjustment.type     = "MIA"
         adjustment.code     = l2100.MIA.send(:"MIA#{index.to_s.rjust(2,'0')}")
 
+        if code_list = Hippo::CodeLists::RemittanceAdviceRemarkCodes[adjustment.code]
+          adjustment.description = code_list[:description]
+        end
+
         @adjustments << adjustment if adjustment.code
       end
 
@@ -44,6 +48,10 @@ module HippoEob
         adjustment.code     = l2100.MOA.send(:"MOA#{index.to_s.rjust(2,'0')}")
         adjustment.amount   = l2100.MOA.send(:"MOA#{(index+1).to_s.rjust(2,'0')}")
 
+        if code_list = Hippo::CodeLists::RemittanceAdviceRemarkCodes[adjustment.code]
+          adjustment.description = code_list[:description]
+        end
+
         @adjustments << adjustment if adjustment.code
       end
 
@@ -51,10 +59,14 @@ module HippoEob
       l2100.CAS.each do |cas|
         [2,5,8,11,14,17].each do |index|
 
-          adjustment          = Adjustment.new
-          adjustment.type     = cas.CAS01
-          adjustment.code     = cas.send(:"CAS#{index.to_s.rjust(2,'0')}")
-          adjustment.amount   = cas.send(:"CAS#{(index+1).to_s.rjust(2,'0')}")
+          adjustment        = Adjustment.new
+          adjustment.type   = cas.CAS01
+          adjustment.code   = cas.send(:"CAS#{index.to_s.rjust(2,'0')}")
+          adjustment.amount = cas.send(:"CAS#{(index+1).to_s.rjust(2,'0')}")
+
+          if code_list = Hippo::CodeLists::ClaimAdjustmentReasonCodes[adjustment.code]
+            adjustment.description = code_list[:description]
+          end
 
           @adjustments << adjustment
         end
@@ -110,6 +122,20 @@ module HippoEob
       end
 
       return allowed_amount.to_d.to_f
+    end
+
+    def code_glossary
+      output = {}
+
+      adjustments.each do |adjustment|
+        output[adjustment.code] = adjustment.description
+      end
+
+      services.each do |service|
+        output.merge!(service.code_glossary)
+      end
+
+      output
     end
   end
 end

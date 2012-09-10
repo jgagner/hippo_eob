@@ -3,12 +3,10 @@ module HippoEob
     attr_accessor  :service_number, :procedure_code, :date_of_service, :place_of_service,
                    :modifier_1, :modifier_2, :modifier_3, :modifier_4,
                    :charge_amount, :payment_amount, :allowed_amount, :deductible_amount, :co_insurance,
-                   :adjustments, :original_units_svc_count, :units_svc_paid_count, :total_allowed_amount,
-                   :remark_codes
+                   :adjustments, :original_units_svc_count, :units_svc_paid_count, :total_allowed_amount
 
     def initialize
       @adjustments  = []
-      @remark_codes = []
     end
 
     def populate_hippo_object(l2110)
@@ -28,24 +26,42 @@ module HippoEob
       l2110.CAS.each do |cas|
         [2,5,8,11,14,17].each do |index|
 
-          adjustment          = Adjustment.new
-          adjustment.type     = cas.CAS01
-          adjustment.code     = cas.send(:"CAS#{index.to_s.rjust(2,'0')}")
-          adjustment.amount   = cas.send(:"CAS#{(index+1).to_s.rjust(2,'0')}")
+          adjustment        = Adjustment.new
+          adjustment.type   = cas.CAS01
+          adjustment.code   = cas.send(:"CAS#{index.to_s.rjust(2,'0')}")
+          adjustment.amount = cas.send(:"CAS#{(index+1).to_s.rjust(2,'0')}")
+
+          if code_list = Hippo::CodeLists::ClaimAdjustmentReasonCodes[adjustment.code]
+            adjustment.description = code_list[:description]
+          end
+
 
           @adjustments << adjustment if adjustment.code
         end
       end
 
       l2110.LQ.each do |lq|
-        next if lq.LQ01 != 'HE'
+        next unless lq.LQ01 == 'HE'
 
-        @remark_codes << lq.LQ02
+        adjustment        = Adjustment.new
+        adjustment.type   = 'RemarkCodes'
+        adjustment.code   = lq.LQ02
+        adjustment.amount = 0
+
+        if code_list = Hippo::CodeLists::RemittanceAdviceRemarkCodes[adjustment.code]
+          adjustment.description = code_list[:description]
+        end
+
+        @adjustments << adjustment if adjustment.code
       end
 
       @allowed_amount    = l2110.AMT.AMT02.nil? ? 0 : l2110.AMT.AMT02
       @deductible_amount = deductible_amount
       @co_insurance      = coinsurance_amount
+    end
+
+    def remark_codes
+      adjustments.find_all{|a| a.type == 'RemarkCodes'}.map{|a| a.code }
     end
 
     def patient_responsibility_amount
@@ -67,6 +83,15 @@ module HippoEob
 
     def prior_payment_amount
       adjustments.find_all{|a| a.code == '23'}.inject(0){|memo, adj| memo += adj.amount}
+    end
+
+    def code_glossary
+      output = {}
+      adjustments.each do |adjustment|
+        output[adjustment.code] = adjustment.description
+      end
+
+      output
     end
   end
 end
