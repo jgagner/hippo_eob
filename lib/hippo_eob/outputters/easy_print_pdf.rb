@@ -301,10 +301,6 @@ module HippoEob
                        format_currency(@eob.total_provider_adjustments),
                        format_currency(@eob.amount.to_d)
                   ]
-        provider_adjustments.each do |plb|
-          footer <<  plb
-        end
-
 
         @pdf.table(footer) do
           style(row(0..-1), :borders => [], :padding => [0, 5], :align => :right)
@@ -314,17 +310,25 @@ module HippoEob
           style(column(-1), :width => 80)
         end
 
+        provider_adjustments
+
       end
 
       def provider_adjustments
         if @eob.adjustments.length > 0 then
           plb = []
           plb << [' ']
-          plb << ['PROVIDER', 'DETAILS:', 'PLB CODE','','FCN/ ID', '','', '', 'AMOUNT']
+          plb << ['PROVIDER ADJ DETAILS:', 'TYPE','AMOUNT']
           @eob.adjustments.each_with_index do |adj, index|
-            plb << ['','',adj.code[0,2].to_s, '', adj.code[2..-1].to_s, '', '','',format_currency(adj.amount.to_d)] unless adj.code.to_s.length == 0
+            plb << ['', adj.code.to_s, format_currency(adj.amount.to_d)] unless adj.code.to_s.length == 0
           end
-          return plb
+
+          @pdf.table(plb) do
+            style(row(0..-1), :borders => [], :padding => [0, 5], :align => :right)
+            style(column(0),      :width => 100)
+            style(column(1..2),   :width => 80)
+
+          end
         end
       end
 

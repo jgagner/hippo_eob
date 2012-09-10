@@ -68,11 +68,11 @@ module HippoEob
 
           adjustment          = Adjustment.new
           adjustment.type     = 'PLB'
-          adjustment.code     = plb.send(:"PLB#{index.to_s.rjust(2,'0')}_01").to_s +
+          adjustment.code     = plb.send(:"PLB#{index.to_s.rjust(2,'0')}_01").to_s + ' - ' +
                                 plb.send(:"PLB#{index.to_s.rjust(2,'0')}_02").to_s
           adjustment.amount   = plb.send(:"PLB#{(index+1).to_s.rjust(2,'0')}") || 0
 
-          @adjustments << adjustment if !adjustment.code.nil?
+          @adjustments << adjustment if adjustment.code.to_s.length > 4
         end
       end
     end
