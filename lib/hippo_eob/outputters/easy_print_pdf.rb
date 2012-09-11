@@ -276,10 +276,10 @@ module HippoEob
 
       def print_detail
         claim_payment_pages.each_with_index do |page_rows, index|
+          print_claim_payment_header
 
           if index > 0
             start_doc_new_page
-            print_claim_payment_header
             @page_row_counter = 0
           end
 
