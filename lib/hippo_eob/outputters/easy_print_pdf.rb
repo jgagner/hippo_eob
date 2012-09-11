@@ -143,7 +143,7 @@ module HippoEob
       end
 
       def page_maximum_lines(page_number)
-        maximum_lines = 79
+        maximum_lines = 75
         maximum_lines -= @eob_header_lines if page_number == 1
         maximum_lines
       end
