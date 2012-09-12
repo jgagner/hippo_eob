@@ -1,3 +1,4 @@
+#! /usr/bin/env ruby
 require 'bigdecimal'
 require 'bigdecimal/util'
 require 'fileutils'
