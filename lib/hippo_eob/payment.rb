@@ -1,6 +1,8 @@
 module HippoEob
   class Payment
-	attr_accessor :payer, :payee, :check_number,  :date_of_check,  :trace_number, :method_type,  :amount, :claim_payments, :adjustments
+    attr_accessor :payer, :payee, :check_number,  :date_of_check,  :trace_number,
+                  :method_type,  :amount, :claim_payments, :adjustments,
+                  :hippo_object
 
     def self.process_hipaa_file(filename)
 
@@ -28,6 +30,7 @@ module HippoEob
     end
 
     def process_hippo_object(ts)
+      @hippo_object          = ts
       @payer.name            = ts.L1000A.N1.N102 || ''
       @payer.contact_number  = ''
       @payer.address_line_1  = ts.L1000A.N3.N301

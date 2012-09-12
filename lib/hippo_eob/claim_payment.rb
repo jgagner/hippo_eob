@@ -4,7 +4,8 @@ module HippoEob
                   :payment_amount, :patient_reponsibility_amount,  :tracking_number, :cross_over_carrier_name,
                   :cross_over_carrier_code,
                   :services,  :adjustments, :patient_name, :provider_npi, :rendering_provider_information, :total_submitted,
-                  :interest_amount, :late_filing_amount, :reference_identifications
+                  :interest_amount, :late_filing_amount, :reference_identifications,
+                  :hippo_object
 
     def initialize
       @services    = []
@@ -13,6 +14,8 @@ module HippoEob
     end
 
     def process_hippo_object(l2100)
+      @hippo_object = l2100
+
       self.payment_amount                   = l2100.CLP.CLP04
       self.claim_status_code                = l2100.CLP.CLP02
       self.tracking_number                  = l2100.CLP.CLP07

@@ -3,13 +3,15 @@ module HippoEob
     attr_accessor  :service_number, :procedure_code, :date_of_service, :place_of_service,
                    :modifier_1, :modifier_2, :modifier_3, :modifier_4,
                    :charge_amount, :payment_amount, :allowed_amount, :deductible_amount, :co_insurance,
-                   :adjustments, :original_units_svc_count, :units_svc_paid_count, :total_allowed_amount
+                   :adjustments, :original_units_svc_count, :units_svc_paid_count, :total_allowed_amount,
+                   :hippo_object
 
     def initialize
       @adjustments  = []
     end
 
     def populate_hippo_object(l2110)
+      @hippo_object      = l2110
       @service_number    = l2110.REF_02.ReferenceIdentification
       @date_of_service   = l2110.DTM.DTM02
       @procedure_code    = l2110.SVC.ProductServiceId
