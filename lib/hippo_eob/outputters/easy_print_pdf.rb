@@ -192,6 +192,9 @@ module HippoEob
         claim_payment_data = Hash.new { |hash, key| hash[key] = Array.new }
 
         @eob.claim_payments.sort_by{|cp| cp.patient_name}.each_with_index do |c, index|
+         moa_mia_display = c.adjustments.find_all{|adj| ['MIA','MOA'].include?(adj.type)}.map{|adj| adj.code}.join( ' ' )
+         moa_mia_display = 'MOA: ' + moa_mia_display if moa_mia_display.to_s.length > 0
+
          claim_payment_data[index] << [
                           {:content => 'NAME:' + c.patient_name[0,20], :borders => [:top]},
                           {:content => 'HIC: ' + c.policy_number.to_s, :borders => [:top]},
@@ -199,7 +202,7 @@ module HippoEob
                           {:content => '', :borders => [:top]},
                           {:content => 'ICN:'   + c.tracking_number.to_s, :borders => [:top], :single_line => true, :overflow => :shrink_to_fit},
                           {:content => '', :borders => [:top]},
-                          {:content => c.adjustments.map{|adj| adj.code}.join( ' ' ), :borders => [:top]},
+                          {:content => moa_mia_display.to_s, :borders => [:top]},
                           {:content => '', :borders => [:top]}
                        ]
 
