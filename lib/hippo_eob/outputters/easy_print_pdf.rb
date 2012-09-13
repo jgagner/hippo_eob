@@ -143,38 +143,9 @@ module HippoEob
       end
 
       def page_maximum_lines(page_number)
-        maximum_lines = 75
+        maximum_lines = 74
         maximum_lines -= @eob_header_lines if page_number == 1
         maximum_lines
-      end
-
-      def get_adjustments(cas, cas_type)
-        return [] unless cas.length > 0
-
-        cas_data = []
-        schar = '-'
-        cas.each do |c|
-          next if c.amount == 0
-
-          schar = cas_type == 'CLAIM' ? ':' : '-'
-
-          add_array = (c.type == 'PR' && (c.code == '1' || c.code == '2')) ? false : true
-
-          if add_array
-            if cas_data.length > 0 and cas_data.last.include?(c.type)
-              cas_data.last.replace  cas_data.last +  c.code + ' '   unless c.code.nil?
-            else
-              cas_data << c.type + schar  + c.code unless c.type.nil?
-            end
-
-            if cas_type == 'SERVICE'
-              cas_data.last.replace cas_data.last + format_currency(c.amount.to_d).rjust(18)
-            end
-          end
-        end
-
-        return cas_data
-
       end
 
       def get_services(svc, provider_npi)
@@ -183,7 +154,7 @@ module HippoEob
 
           svc_info << [{:content => provider_npi + '  ' + s.date_of_service.strftime("%m%d%Y") + ' ' + s.place_of_service.to_s, :border_color => 'E3E3E3', :borders => [:top]},
                        {:content => s.procedure_code + ' ' + [s.modifier_1, s.modifier_2, s.modifier_3].compact.join(' '), :border_color => 'E3E3E3', :borders => [:top]},
-                       {:content => s.units_svc_paid_count.to_f.to_s, :border_color => 'E3E3E3', :borders => [:top]},
+                       {:content => (s.units_paid || 0.to_d).to_s('F'), :border_color => 'E3E3E3', :borders => [:top]},
                        {:content => format_currency(s.charge_amount.to_d), :border_color => 'E3E3E3', :borders => [:top]},
                        {:content => format_currency(s.allowed_amount.to_d), :border_color => 'E3E3E3', :borders => [:top]},
                        {:content => format_currency(s.deductible_amount), :border_color => 'E3E3E3', :borders => [:top]},
@@ -191,9 +162,16 @@ module HippoEob
                        {:content => format_currency(s.payment_amount.to_d), :border_color => 'E3E3E3', :borders => [:top]},
                      ]
 
-          get_adjustments(s.adjustments, 'SERVICE').each_with_index do |adj,index|
-            svc_info << [ s.remark_codes.join(' '),'',s.original_units_svc_count.to_s.to_f,'', adj] unless index == 0
-            svc_info << ['','','','', adj] unless index > 0
+          s.adjustments.each_with_index do |adjustment,index|
+            next if adjustment.amount == 0
+            next if adjustment.type == 'PR' && ['1','2'].include?(adjustment.code)
+
+            display = adjustment.type + '-' + adjustment.code + format_currency(adjustment.amount.to_d).rjust(18)
+            if index == 0
+              svc_info << [ s.remark_codes.join(' '),'',(s.units_sent || 0.to_d).to_s('F'),'', display]
+            else
+              svc_info << ['','','','', display]
+            end
           end
 
           if s.service_number.to_s != '' then
@@ -221,7 +199,7 @@ module HippoEob
                           {:content => '', :borders => [:top]},
                           {:content => 'ICN:'   + c.tracking_number.to_s, :borders => [:top], :single_line => true, :overflow => :shrink_to_fit},
                           {:content => '', :borders => [:top]},
-                          {:content => get_adjustments(c.adjustments, 'CLAIM').flatten.join( ' ' ), :borders => [:top]},
+                          {:content => c.adjustments.map{|adj| adj.code}.join( ' ' ), :borders => [:top]},
                           {:content => '', :borders => [:top]}
                        ]
 
@@ -276,12 +254,12 @@ module HippoEob
 
       def print_detail
         claim_payment_pages.each_with_index do |page_rows, index|
-          print_claim_payment_header
-
           if index > 0
             start_doc_new_page
             @page_row_counter = 0
           end
+
+          print_claim_payment_header
 
           data = cellify(page_rows,
                          :padding => [1, 5], :size => 6, :borders => [],
@@ -363,6 +341,8 @@ module HippoEob
       def print_glossary
         output  = [['Code','Description']]
         @eob.code_glossary.sort_by{|code, value| code}.each do |(code, description)|
+          next if ['1','2'].include?(code) # skip deductible and coinsurance
+
           output << [
             {:content => code,        :borders => [:top], :border_color => 'E3E3E3'},
             {:content => description, :borders => [:top], :border_color => 'E3E3E3'},

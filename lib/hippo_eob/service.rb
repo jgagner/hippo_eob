@@ -3,7 +3,7 @@ module HippoEob
     attr_accessor  :service_number, :procedure_code, :date_of_service, :place_of_service,
                    :modifier_1, :modifier_2, :modifier_3, :modifier_4,
                    :charge_amount, :payment_amount, :allowed_amount, :deductible_amount, :co_insurance,
-                   :adjustments, :original_units_svc_count, :units_svc_paid_count, :total_allowed_amount,
+                   :adjustments, :units_sent, :units_paid, :total_allowed_amount,
                    :hippo_object
 
     def initialize
@@ -11,19 +11,19 @@ module HippoEob
     end
 
     def populate_hippo_object(l2110)
-      @hippo_object      = l2110
-      @service_number    = l2110.REF_02.ReferenceIdentification
-      @date_of_service   = l2110.DTM.DTM02
-      @procedure_code    = l2110.SVC.ProductServiceId
-      @modifier_1        = l2110.SVC.SVC01_03
-      @modifier_2        = l2110.SVC.SVC01_04
-      @modifier_3        = l2110.SVC.SVC01_05
-      @charge_amount     = l2110.SVC.SVC02
-      @payment_amount    = l2110.SVC.SVC03
-      @units_svc_paid_count = l2110.SVC.SVC05
-      @original_units_svc_count = l2110.SVC.SVC07
-      location_number    = l2110.find_by_name('Service Identification').detect{|ref| ref.REF01 == 'LU'}
-      @place_of_service  = location_number.REF02 if location_number
+      @hippo_object     = l2110
+      @service_number   = l2110.REF_02.ReferenceIdentification
+      @date_of_service  = l2110.DTM.DTM02
+      @procedure_code   = l2110.SVC.ProductServiceId
+      @modifier_1       = l2110.SVC.SVC01_03
+      @modifier_2       = l2110.SVC.SVC01_04
+      @modifier_3       = l2110.SVC.SVC01_05
+      @charge_amount    = l2110.SVC.SVC02
+      @payment_amount   = l2110.SVC.SVC03
+      @units_paid       = l2110.SVC.SVC05
+      @units_sent       = l2110.SVC.SVC07
+      location_number   = l2110.find_by_name('Service Identification').detect{|ref| ref.REF01 == 'LU'}
+      @place_of_service = location_number.REF02 if location_number
 
       l2110.CAS.each do |cas|
         [2,5,8,11,14,17].each do |index|
