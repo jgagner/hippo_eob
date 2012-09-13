@@ -19,9 +19,9 @@ module HippoEob
       self.payment_amount                   = l2100.CLP.CLP04
       self.claim_status_code                = l2100.CLP.CLP02
       self.tracking_number                  = l2100.CLP.CLP07
+      self.patient_name                     = l2100.NM1.NM103 + ', ' + l2100.NM1.NM104
       self.policy_number                    = l2100.NM1.NM109
       self.patient_number                   = l2100.CLP.CLP01
-      self.patient_name                     = l2100.NM1.NM103 + ', ' + l2100.NM1.NM104
       self.patient_reponsibility_amount     = l2100.CLP.CLP05
       self.provider_npi                     = l2100.find_by_name('Service Provider Name').NM109
       self.rendering_provider_information   = l2100.find_by_name('Rendering Provider Identification').REF02
@@ -30,6 +30,11 @@ module HippoEob
       self.total_submitted                  = l2100.CLP.CLP03
       self.interest_amount                  = l2100.AMT.find_all{|amt| amt.AMT01 == 'I'}.inject(0.0.to_d) { |mem, amt| mem + amt.AMT02 }
       self.late_filing_amount               = l2100.AMT.find_all{|amt| amt.AMT01 == 'D8'}.inject(0.0.to_d) { |mem, amt| mem + amt.AMT02 }
+
+      if nm1 = l2100.find_by_name('Corrected Patient/Insured Name')
+        self.policy_number = nm1.NM109 unless nm1.NM109.nil?
+        self.patient_name  = nm1.NM103.to_s + ', ' + nm1.NM104.to_s if [:NM103,:NM104].all?{|sym| nm1.send(sym)}
+      end
 
       #Claim CAS - MIA - MOA
       [5,20,21].each do |index|
