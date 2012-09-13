@@ -200,7 +200,7 @@ module HippoEob
                           {:content => 'HIC: ' + c.policy_number.to_s, :borders => [:top]},
                           {:content => 'ACNT:'   + c.patient_number.to_s, :borders => [:top]},
                           {:content => '', :borders => [:top]},
-                          {:content => 'ICN:'   + c.tracking_number.to_s, :borders => [:top], :single_line => true, :overflow => :shrink_to_fit},
+                          {:content => 'ICN:'   + c.tracking_number.to_s, :borders => [:top], :overflow => :shrink_to_fit, :single_line => true},
                           {:content => '', :borders => [:top]},
                           {:content => moa_mia_display.to_s, :borders => [:top]},
                           {:content => '', :borders => [:top]}
@@ -224,9 +224,22 @@ module HippoEob
                          'NET', format_currency(c.payment_amount)
                         ]
 
-          c.reference_identifications.each_with_index do |ref, i|
-            label = i == 0 ? 'OTHER ID:' : ''
-            claim_payment_data[index] << [label,'', {:content => ref.to_s, :align => :left}]
+          c.claim_identifiers.each_with_index do |ref, i|
+            label = if i == 0
+                      claim_payment_data[index] << [' ']
+                      'OTHER CLAIM IDENTIFIERS:'
+                    end
+
+            claim_payment_data[index] << [{:content => label.to_s, :colspan => 2, :align => :right}, {:content => ref.to_s, :align => :left, :colspan => 3}]
+          end
+
+          c.provider_identifiers.each_with_index do |ref, i|
+            label = if i == 0
+                      claim_payment_data[index] << [' ']
+                      'OTHER PROVIDER IDENTIFIERS:'
+                    end
+
+            claim_payment_data[index] << [{:content => label, :colspan => 2, :align => :right}, {:content => ref.to_s, :align => :left, :colspan => 3}]
           end
 
           if  c.cross_over_carrier_name != '' && c.cross_over_carrier_name != nil
@@ -389,7 +402,7 @@ module HippoEob
           current_row_options = row_options[current_row]
           row.each do |cell|
             current_column         += 1
-            current_column_options = column_options[current_column]
+            current_column_options = column_options[current_column] || {}
 
             cellable =  case cell
                         when Prawn::Table::Cell, Prawn::Table

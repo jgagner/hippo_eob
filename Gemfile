@@ -4,4 +4,4 @@ source "http://rubygems.org"
 gemspec
 
 gem 'hippo', :github => 'promedical/hippo', :branch => 'master'
-gem 'prawn', :github => 'prawnpdf/prawn'
+gem 'prawn', :github => 'prawnpdf/prawn',   :branch => 'master'

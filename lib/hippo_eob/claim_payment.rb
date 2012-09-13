@@ -4,13 +4,14 @@ module HippoEob
                   :payment_amount, :patient_reponsibility_amount,  :tracking_number, :cross_over_carrier_name,
                   :cross_over_carrier_code,
                   :services,  :adjustments, :patient_name, :provider_npi, :rendering_provider_information, :total_submitted,
-                  :interest_amount, :late_filing_amount, :reference_identifications,
+                  :interest_amount, :late_filing_amount, :claim_identifiers, :provider_identifiers,
                   :hippo_object
 
     def initialize
-      @services    = []
-      @adjustments = []
-      @reference_identifications = []
+      @services             = []
+      @adjustments          = []
+      @claim_identifiers    = []
+      @provider_identifiers = []
     end
 
     def process_hippo_object(l2100)
@@ -80,8 +81,12 @@ module HippoEob
         end
       end
 
-      l2100.REF.each do |ref|
-        @reference_identifications << "(#{ref.REF01}) #{ref.REF02}"
+      l2100.find_by_name('Other Claim Related Identification').each do |ref|
+        @claim_identifiers << "(#{ref.REF01}) #{ref.REF02}" if ref.REF02.to_s.length > 0
+      end
+
+      l2100.find_by_name('Rendering Provider Identification').each do |ref|
+        @provider_identifiers << "(#{ref.REF01}) #{ref.REF02}" if ref.REF02.to_s.length > 0
       end
 
       l2100.L2110.each do |l2110|
