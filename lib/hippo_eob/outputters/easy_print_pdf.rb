@@ -224,8 +224,9 @@ module HippoEob
                          'NET', format_currency(c.payment_amount)
                         ]
 
-          c.reference_identifications.each do |ref|
-            claim_payment_data[index] << ['','', {:content => ref.to_s, :align => :left}]
+          c.reference_identifications.each_with_index do |ref, i|
+            label = i == 0 ? 'OTHER ID:' : ''
+            claim_payment_data[index] << [label,'', {:content => ref.to_s, :align => :left}]
           end
 
           if  c.cross_over_carrier_name != '' && c.cross_over_carrier_name != nil
