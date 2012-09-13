@@ -68,16 +68,16 @@ module HippoEob
           @pdf.text_box  @eob.payer.city + ', ' + @eob.payer.state + ' ' + format_postal_code(@eob.payer.zip_code),
                          :at=>[@left_boundary, @pdf.cursor]
         end
-        @pdf.move_down @line_height + 15
-        @eob_header_lines += 1
+        @pdf.move_down @line_height * 3
+        @eob_header_lines += 3
 
         if @eob.payer.telephone_number_1
           @pdf.text_box 'PAYER BUSINESS CONTACT INFORMATION:', :at =>[@left_boundary, @pdf.cursor]
           @pdf.move_down @line_height
           @eob_header_lines += 1
           @pdf.text_box format_telephone_number(@eob.payer.telephone_number_1), :at =>[@left_boundary, @pdf.cursor]
-          @pdf.move_down @line_height + 15
-          @eob_header_lines += 1
+          @pdf.move_down @line_height * 3
+          @eob_header_lines += 3
         end
 
         if @eob.payer.telephone_label_2 && @eob.payer.telephone_number_2
@@ -88,8 +88,8 @@ module HippoEob
           @pdf.move_down @line_height
           @eob_header_lines += 1
           @pdf.text_box format_telephone_number(@eob.payer.telephone_number_2), :at =>[@left_boundary, @pdf.cursor]
-          @pdf.move_down @line_height + 15
-          @eob_header_lines += 1
+          @pdf.move_down @line_height * 3
+          @eob_header_lines += 3
         end
 
         @pdf.font_size 6
@@ -108,7 +108,7 @@ module HippoEob
                       :at=>[@left_boundary, @pdf.cursor]
 
 
-        @pdf.move_down @line_height + 8
+        @pdf.move_down @line_height * 2
         @pdf.text_box 'CHECK/EFT #:' + @eob.check_number, :at=>[@left_boundary, @pdf.cursor]
 
 
