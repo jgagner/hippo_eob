@@ -361,8 +361,8 @@ module HippoEob
           next if ['1','2'].include?(code) # skip deductible and coinsurance
 
           output << [
-            {:content => code,        :borders => [:top], :border_color => 'E3E3E3'},
-            {:content => description, :borders => [:top], :border_color => 'E3E3E3'},
+            {:content => code.to_s,        :borders => [:top], :border_color => 'E3E3E3'},
+            {:content => description.to_s, :borders => [:top], :border_color => 'E3E3E3'},
           ]
         end
 
