@@ -357,7 +357,7 @@ module HippoEob
 
       def print_glossary
         output  = [['Code','Description']]
-        @eob.code_glossary.sort_by{|code, value| code}.each do |(code, description)|
+        @eob.code_glossary.sort_by{|code, value| code.to_s}.each do |(code, description)|
           next if ['1','2'].include?(code) # skip deductible and coinsurance
 
           output << [
