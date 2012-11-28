@@ -152,8 +152,8 @@ module HippoEob
         svc_info = []
         svc.each do |s|
 
-          svc_info << [{:content => provider_npi + '  ' + (s.date_of_service ? s.date_of_service.strftime("%m%d%Y") : '        ')+ ' ' + s.place_of_service.to_s, :border_color => 'E3E3E3', :borders => [:top]},
-                       {:content => s.procedure_code + ' ' + [s.modifier_1, s.modifier_2, s.modifier_3].compact.join(' '), :border_color => 'E3E3E3', :borders => [:top]},
+          svc_info << [{:content => provider_npi.to_s + '  ' + (s.date_of_service ? s.date_of_service.strftime("%m%d%Y") : '        ')+ ' ' + s.place_of_service.to_s, :border_color => 'E3E3E3', :borders => [:top]},
+                       {:content => s.procedure_code.to_s + ' ' + [s.modifier_1, s.modifier_2, s.modifier_3].compact.join(' '), :border_color => 'E3E3E3', :borders => [:top]},
                        {:content => (s.units_paid || 0.to_d).to_s('F'), :border_color => 'E3E3E3', :borders => [:top]},
                        {:content => format_currency(s.charge_amount.to_d), :border_color => 'E3E3E3', :borders => [:top]},
                        {:content => format_currency(s.allowed_amount.to_d), :border_color => 'E3E3E3', :borders => [:top]},
