@@ -291,7 +291,7 @@ module HippoEob
                             7 => {:width => 40, :align => :right}
                           })
 
-          @pdf.table(data)
+          @pdf.table(data) if page_rows.length > 0
           @page_row_counter += page_rows.length
         end
       end
