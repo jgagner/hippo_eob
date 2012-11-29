@@ -124,7 +124,7 @@ module HippoEob
       if services.length > 0
         @services.inject(0){|memo, svc| memo += svc.total_carc_amount}
       else
-        @adjustments.find_all{|a| ['CO','CR','OA','PI', 'PR'].include?(a.type)}.inject(0) {|memo, adj| memo += adj.amount}
+        @adjustments.find_all{|a| ['CO','CR','OA','PI', 'PR'].include?(a.type)}.inject(BigDecimal.new('0')) {|memo, adj| memo += (adj.amount || 0)}
       end
     end
 
