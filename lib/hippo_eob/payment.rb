@@ -78,6 +78,8 @@ module HippoEob
           @adjustments << adjustment if adjustment.code.to_s.length > 0
         end
       end
+
+      self
     end
 
     def total_claims

@@ -94,6 +94,8 @@ module HippoEob
         service.populate_hippo_object(l2110)
         @services << service
       end
+
+      self
     end
 
     def deductible_amount
