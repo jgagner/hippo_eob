@@ -56,7 +56,7 @@ module HippoEob
         if @eob.payer.address_line_2.to_s.length > 0
           @pdf.text_box  @eob.payer.address_line_2.to_s, :at =>[@left_boundary, @pdf.cursor]
         else
-          @pdf.text_box  @eob.payer.city + ', ' + @eob.payer.state + ' ' + format_postal_code(@eob.payer.zip_code),
+          @pdf.text_box  @eob.payer.city.to_s + ', ' + @eob.payer.state.to_s + ' ' + format_postal_code(@eob.payer.zip_code.to_s),
                        :at=>[@left_boundary, @pdf.cursor]
         end
 
@@ -96,8 +96,8 @@ module HippoEob
       end
 
       def print_page_header
-        @pdf.text_box @eob.payee.name, :at =>[@left_boundary, @pdf.cursor]
-        @pdf.text_box 'NPI #: ' + @eob.payee.contact_number, :at=>[@right_boundary, @pdf.cursor]
+        @pdf.text_box @eob.payee.name.to_s, :at =>[@left_boundary, @pdf.cursor]
+        @pdf.text_box 'NPI #: ' + @eob.payee.contact_number.to_s, :at=>[@right_boundary, @pdf.cursor]
         @pdf.move_down @line_height
         @pdf.text_box @eob.payee.address_line_1, :at =>[@left_boundary, @pdf.cursor]
         @pdf.text_box 'DATE: '  + @eob.date_of_check.to_s, :at=>[@right_boundary, @pdf.cursor]
