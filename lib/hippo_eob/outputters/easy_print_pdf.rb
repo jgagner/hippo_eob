@@ -44,7 +44,7 @@ module HippoEob
 
         @pdf.font_size 6
         @pdf.text_box  @eob.payer.name, :at =>[@left_boundary, @pdf.cursor]
-        @pdf.text_box  @eob.payer.name, :align=>:right, :at =>[@right_boundary, @pdf.cursor]
+        @pdf.text_box  @eob.payer.name, :align=>:right, :at =>[@right_boundary-200, @pdf.cursor]
         @pdf.move_down @line_height
         @eob_header_lines += 1
 
